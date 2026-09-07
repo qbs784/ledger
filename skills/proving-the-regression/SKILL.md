@@ -28,7 +28,7 @@ Restating the implementation is the same defect wearing different clothes: a tes
 
 ## Through the real entry path
 
-Exercise the shipped entry — the published binary, the loader, the worker, the subprocess, the built artifact — wherever the change reaches it. Read `real_entry_point` and `build` from `.ledger.yml`.
+Exercise the shipped entry — the published binary, the loader, the worker, the subprocess, the built artifact — wherever the change reaches it. Read `commands.real_entry_point` and `commands.build` from `.ledger.yml`.
 
 A hand-assembled harness silently skips whatever the real entry does: export validation, argument parsing, module resolution, environment setup, packaging. Guards that only ever run against a hand-built fixture are guards against a fixture.
 

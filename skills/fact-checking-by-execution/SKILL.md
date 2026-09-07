@@ -23,7 +23,7 @@ This procedure is mandatory for every new document, and for every new paragraph 
 
 5. **Regenerate every derivative.** If the document has generated counterparts — a translated pair, a published site, an extracted catalog — update them from the corrected source rather than editing them in place.
 
-Read `docs_check` from `.ledger.yml` and run it on what you touched.
+Read `commands.docs_check` from `.ledger.yml` and run it on what you touched.
 
 ## Check each claim against its strongest owner
 

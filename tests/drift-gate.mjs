@@ -253,20 +253,31 @@ function checkAdapterKeys(root, skills) {
     fail('skills/adapting-to-a-project/references/adapter-template.yml', 'missing; it is the adapter schema every other skill reads against')
     return
   }
-  const template = readFileSync(templatePath, 'utf8')
+  // Collect the template's full dotted paths, tracking indentation. Matching a
+  // bare name at any depth would accept `build` for what is really
+  // `commands.build`, and a skill that cites the wrong path sends the reader
+  // looking for a key that is not there.
   const declared = new Set()
-  for (const match of template.matchAll(/^\s{0,2}([a-z_]+):/gm)) declared.add(match[1])
+  const stack = []
+  for (const line of readFileSync(templatePath, 'utf8').split('\n')) {
+    const match = /^(\s*)([a-z_]+):/.exec(line)
+    if (!match) continue
+    const depth = match[1].length
+    while (stack.length > 0 && stack[stack.length - 1].depth >= depth) stack.pop()
+    stack.push({ depth, name: match[2] })
+    declared.add(stack.map(entry => entry.name).join('.'))
+  }
 
   for (const skill of skills) {
     // Keys are cited as `key` or `parent.key` in a sentence naming the adapter.
     for (const line of skill.body.split('\n')) {
       if (!line.includes('.ledger.yml')) continue
-      for (const match of line.matchAll(/`([a-z_]+)(?:\.([a-z_]+))?`/g)) {
-        const [, parent, child] = match
-        if (!declared.has(parent)) {
-          fail(relative(root, skill.path), `reads adapter key \`${parent}\`, which the adapter template does not declare`)
-        } else if (child !== undefined && !new RegExp(`^\\s{2,}${child}:`, 'm').test(template)) {
-          fail(relative(root, skill.path), `reads adapter key \`${parent}.${child}\`, which the adapter template does not declare`)
+      for (const match of line.matchAll(/`([a-z_]+(?:\.[a-z_]+)*)`/g)) {
+        const path = match[1]
+        if (!declared.has(path)) {
+          const nested = [...declared].find(entry => entry.endsWith(`.${path}`))
+          const hint = nested === undefined ? 'the adapter template does not declare it' : `the template declares it as \`${nested}\``
+          fail(relative(root, skill.path), `reads adapter key \`${path}\`, but ${hint}`)
         }
       }
     }

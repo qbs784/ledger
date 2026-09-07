@@ -18,7 +18,7 @@ A demo GIF is an evidence claim: *this is what the software does at this commit.
 
 ## Stage the application
 
-Evidence for a specific change demonstrates that change's tree, so stage per change. Read `build` and `real_entry_point` from `.ledger.yml`.
+Evidence for a specific change demonstrates that change's tree, so stage per change. Read `commands.build` and `commands.real_entry_point` from `.ledger.yml`.
 
 1. **Require a clean worktree**, record its exact commit (`git rev-parse HEAD`), then build **that recorded tree**. A GIF recorded against a different commit's build misattributes the evidence, and nothing downstream can detect it.
 2. **Boot one server per port from that tree**, with fresh scratch state roots — home, workspace, session. Give the browser a fresh isolated context or profile; if the tooling cannot create one, clear that origin's cookies and site storage before navigating, so persisted client state cannot affect the evidence.
