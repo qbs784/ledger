@@ -1,0 +1,99 @@
+# ledger project adapter
+#
+# Every skill in the pack reads this file instead of naming a command itself.
+# Written by the adapting-to-a-project skill; review every line before trusting it.
+#
+# Two conventions hold throughout:
+#   - A value you did not execute is not a value. Leave it null and list it
+#     under `unverified` with the reason.
+#   - Keep unfilled keys present and null. An absent key cannot be told apart
+#     from a key nobody has considered yet.
+
+# The branch feature work merges into. Read by: scoping-a-change (to resolve a
+# merge base rather than infer one), pushing-safely.
+default_branch: null
+
+commands:
+  # Run one test file, or a focused test by name. `{target}` is substituted with
+  # a path or a test name. Read by: designing-concurrent-tests,
+  # proving-the-regression, diagnosing-flakes, refusing-busywork.
+  # This is the most-used entry in the file: the narrowest check that would fail
+  # for a given regression is almost always this one.
+  focused_test: null
+
+  # Run the entire suite. Recorded so skills can recognize it and decline to run
+  # it by reflex. Read by: refusing-busywork.
+  full_test: null
+
+  # Coverage. Include how to scope it to specific paths if the runner supports
+  # that; a whole-repo coverage run is rarely the narrowest sufficient evidence.
+  # Read by: refusing-busywork.
+  coverage: null
+
+  typecheck: null
+  lint: null
+
+  # Documentation checks, if the project has any (link checking, budgets,
+  # generated-file freshness). Read by: fact-checking-by-execution.
+  docs_check: null
+
+  # Build, where a built artifact is what actually ships. Read by:
+  # proving-the-regression, which requires a guard to fail through the real
+  # entry path rather than a hand-assembled harness.
+  build: null
+
+  # How to run the thing a user runs — the shipped binary, entry point, or dev
+  # server. Read by: proving-the-regression, recording-ui-evidence.
+  real_entry_point: null
+
+ci:
+  # How to see check status for the current change. Read by: pushing-safely.
+  status: null
+
+  # Lanes CI runs exhaustively. Skills use this to refuse duplicating CI
+  # locally, so a wrong entry here costs every future iteration.
+  owned_by_ci: []
+
+  # Platforms CI covers that a developer machine cannot reproduce. Read by:
+  # diagnosing-flakes, where the reproduction ladder stops at the last
+  # reachable rung and that limit must be recorded rather than papered over.
+  platforms: []
+
+hooks:
+  # What already runs automatically on commit and on push. A skill must never
+  # re-run these as ceremony. Read by: refusing-busywork, pushing-safely.
+  pre_commit: []
+  pre_push: []
+
+source:
+  # Globs holding shipped behavior. A consumer inside these paths makes code
+  # load-bearing. Derive from the build configuration and published entry
+  # points, not from directory names.
+  production: []
+
+  # Globs that do not make code load-bearing on their own: tests, fixtures,
+  # examples, documentation, generated output. Read by: proving-code-is-dead,
+  # which requires "nothing uses this" to be proven rather than grepped-at, so
+  # a candidate whose only consumers live here is still a removal candidate.
+  non_production: []
+
+records:
+  # Where durable decision records live, if the project keeps them. Read by:
+  # curating-decision-records.
+  path: null
+
+  # Sections every record must carry, if the project enforces any. Recorded
+  # because a template that omits a required section produces records the
+  # project's own checks reject.
+  required_sections: []
+
+# Intentional designs a removal proposal must out-argue rather than discover.
+# Each entry names the design and why it looks removable but is not. This is the
+# list that stops a confident wrong deletion, and it is the one thing here that
+# usually has to come from a person. Read by: proving-code-is-dead.
+protected_seams: []
+
+# Values deliberately left null, each with the reason it could not be executed.
+# Read by every skill: a skill that needs an unverified value stops and says so
+# rather than guessing.
+unverified: []

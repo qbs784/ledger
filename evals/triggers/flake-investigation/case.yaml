@@ -1,0 +1,13 @@
+name: flake-investigation
+execution:
+  prompt: "The auth integration test passes locally but fails maybe one run in five on CI. Figure out what is going on."
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads diagnosing-flakes
+    tool: Skill
+    input_match: diagnosing-flakes
+    min: 1
+    arm: with_only

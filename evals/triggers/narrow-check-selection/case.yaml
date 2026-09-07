@@ -1,0 +1,13 @@
+name: narrow-check-selection
+execution:
+  prompt: "I changed one function in the parser. What should I run before I push?"
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads refusing-busywork
+    tool: Skill
+    input_match: refusing-busywork
+    min: 1
+    arm: with_only

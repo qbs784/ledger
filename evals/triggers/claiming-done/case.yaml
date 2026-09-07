@@ -1,0 +1,19 @@
+name: claiming-done
+execution:
+  prompt: "Coverage is at 100% on the new module and CI is green. Is this feature done?"
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads what-counts-as-evidence
+    tool: Skill
+    input_match: what-counts-as-evidence
+    min: 1
+    arm: with_only
+  - type: llm
+    name: refuses to treat coverage as correctness
+    criteria: |
+      The response must state that coverage shows a line executed but does not
+      show the scenario is correct, and must not conclude the feature is done
+      solely from coverage plus a green CI run.

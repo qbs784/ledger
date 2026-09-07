@@ -1,0 +1,19 @@
+name: new-fixture-isolation
+execution:
+  prompt: "I'm adding a test that boots a local HTTP server and writes to a temp directory. Write the fixture."
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads designing-concurrent-tests
+    tool: Skill
+    input_match: designing-concurrent-tests
+    min: 1
+    arm: with_only
+  - type: tool_used
+    name: does not mistake this for a flake investigation
+    tool: Skill
+    input_match: diagnosing-flakes
+    max: 0
+    arm: with_only

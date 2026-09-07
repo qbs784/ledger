@@ -1,0 +1,12 @@
+{
+  "name": "ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Repo tooling for the ledger skill pack. The pack itself is plain Markdown; this exists only to run the drift gate.",
+  "scripts": {
+    "test": "node tests/drift-gate.mjs",
+    "test:self": "node tests/drift-gate.mjs --self-test"
+  },
+  "license": "MIT"
+}

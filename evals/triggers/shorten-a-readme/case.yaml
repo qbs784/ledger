@@ -1,0 +1,19 @@
+name: shorten-a-readme
+execution:
+  prompt: "This README is too long. Cut it down."
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads writing-complete-propositions
+    tool: Skill
+    input_match: writing-complete-propositions
+    min: 1
+    arm: with_only
+  - type: tool_used
+    name: near-miss negative — plain shortening is not a session-vantage sweep
+    tool: Skill
+    input_match: trimming-session-vantage
+    max: 0
+    arm: with_only

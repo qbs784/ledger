@@ -1,0 +1,13 @@
+name: change-narration-cleanup
+execution:
+  prompt: "Our docs are full of phrases like 'this used to live in the theme file' and 'a later PR wires the worker'. Clean that up."
+  max_turns: 3
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads trimming-session-vantage
+    tool: Skill
+    input_match: trimming-session-vantage
+    min: 1
+    arm: with_only

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Inject the router skill into every session as additional context.
+#
+# Opt-in: see the "Always-on router" section of the README. Shipping this at
+# hooks/hooks.json would enable it for everyone, and an always-on injection is a
+# cost every session pays whether or not the work needs it.
+#
+# Degrades to silence rather than breaking a session: no python3, no router
+# file, or any read failure exits 0 with no output.
+set -uo pipefail
+
+root="${CLAUDE_PLUGIN_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+router="$root/skills/using-ledger/SKILL.md"
+
+command -v python3 >/dev/null 2>&1 || exit 0
+[ -r "$router" ] || exit 0
+
+python3 - "$router" <<'PY' || exit 0
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as handle:
+        body = handle.read()
+except OSError:
+    raise SystemExit(0)
+
+preamble = (
+    "The full content of the ledger router skill follows. It names every skill "
+    "in the pack and when to reach for each. Load the individual skills through "
+    "the Skill tool as their descriptions match the work.\n\n"
+)
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": preamble + body,
+    }
+}))
+PY
