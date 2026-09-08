@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Repo tooling for the ledger skill pack. The pack itself is plain Markdown; this exists only to run the drift gate.",
   "scripts": {
-    "test": "node tests/drift-gate.mjs && node tests/change-scope.test.mjs",
+    "test": "node tests/drift-gate.mjs && node tests/change-scope.test.mjs && node skills/curating-decision-records/scripts/seal-records.mjs --self-test",
     "test:self": "node tests/drift-gate.mjs --self-test",
     "test:triggers": "node tests/trigger-harness.mjs"
   },

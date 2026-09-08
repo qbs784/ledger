@@ -63,6 +63,27 @@ This is the subtlest one, and the most expensive when missed: tools invite the w
 - Do not install software, add a dependency, or launch a service to work around a missing tool. Report the missing dependency instead.
 - Do not add a marker or record for a speculative complaint. A note needs either a decision behind it or a concrete next action.
 
+## When you are about to do it anyway
+
+Knowing the rules above is not the hard part. Arguing past them is, because the argument never arrives as "I will now do something useless" — it arrives as one reasonable sentence, and reasonable sentences are persuasive. **When you catch yourself producing one of these, treat it as the signal that you are about to spend the iteration, not as the reason to spend it.**
+
+| The thought | What is actually true |
+|---|---|
+| "This change is large, so the full suite is the proportionate response." | Size is not reach. A thousand-line change that touches one surface still has one check that would fail; **cross-cutting means many surfaces, not many lines.** Name the surfaces the change reaches, then check those. |
+| "It only takes a minute, and I am pushing anyway." | The minute is charged per iteration, not once. And a check that already passed observes nothing new the second time — repetition adds no information, only latency. Read `hooks.pre_commit` and `hooks.pre_push` from `.ledger.yml` and skip what they list. |
+| "I cannot tell which check would catch this, so running everything is the safe answer." | **Not knowing which check would fail is the finding, not a reason to run all of them.** A green full suite does not tell you which surface the change reached, so it hides the gap instead of closing it. Locate the check first; that answer is part of what you report. |
+| "The tests passed, so I should confirm with coverage too." | Coverage answers a different question than test selection, and running it here answers neither better. Decide separately whether this change alters what the affected source executes; if it does not, the coverage run is a number you already had. |
+| "Raising this timeout would be masking a real failure." | Returning a lane to the budget it was already granted is not masking. **The test is whether you can name what is being waited for.** If you can, it is a budget; if you cannot, no number is the right one and the timeout was never the question. |
+| "I cut it by a third, so the document improved." | A third of what? Cutting narration and cutting a contract measure identically, and **the count cannot tell you which one you did.** Judge the edit by what a reader can no longer learn from the page. |
+| "That sentence reads tighter without the 'never'." | It reads tighter and it now permits something the project forbids. A shorter sentence that allows more is a different sentence, not a better one — modality, timing constraints, exceptions, and numbers are never traded for length. |
+| "One finding makes for a thin review." | A thin review is one with nothing substantiated in it. One proven blocker is a complete review; padding it with nits a green check already enforces spends the reader's attention and buries the blocker under things they cannot act on. |
+| "While I am here, I noticed something adjacent — I may as well check the rest." | Record it and finish the scope you were given. Expanding a narrow survey and stopping at the first good candidate are the same failure in opposite directions: both answer a question nobody asked, and both leave the asked one unanswered. |
+| "The refresh mechanism exists and the branch is behind, so this is the moment." | A capability is not a trigger. Rewriting history costs everyone holding the old commits, and **"the command was available" is not a reason anyone can review.** Use it when something concrete requires it, and say what that was. |
+| "The tool is missing and installing it is one command." | Installing software, adding a dependency, or starting a service changes the environment your results were produced in, and nobody asked for that change. **Report the missing dependency and stop** — a result from an environment you silently altered is worth less than no result. |
+| "The deploy target is already configured, so shipping this is implied." | Configuration records that someone once decided how to publish, not that they have decided to publish now. **Deployment, hosting, and public exposure need an explicit request every time**, including — especially — when the pipeline would accept one without it. |
+
+**Red flags.** "just to be safe", "while I'm here", "it only takes a minute", "for completeness", "might as well", "let's be thorough", "one more pass", "since it is already set up". **None of these names a surface the change reaches, a signal you do not already have, or something the user asked for** — which is the whole test. If one of them is your reason, you do not have one.
+
 ## Report what you ran, and what you deliberately did not
 
 Name the checks you ran and their observed results. Then name what you skipped and why — "the change does not reach that surface", "the hook already ran it", "CI owns that lane".

@@ -44,6 +44,15 @@ Convention is not enough: "we don't edit archived records" holds until someone d
 - **Redirect inbound links** from active prose: retarget them to current authority, point them at the archived path only when the historical snapshot is deliberately being cited, or delete them.
 - **Never verify or repair links leading out of a retired record.** Those pointers are part of the snapshot. Fixing them edits history, and reporting them as valid claims something no check established — if your verifier deliberately skips them, say so rather than implying they were checked.
 
+[scripts/seal-records.mjs](scripts/seal-records.mjs) implements that ordering over a directory of retired records and a manifest JSON beside it, needing nothing beyond a Node runtime:
+
+```sh
+node scripts/seal-records.mjs <retired-dir>          # verify every seal
+node scripts/seal-records.mjs <retired-dir> --write  # verify, then append the new records
+```
+
+Verification fails on a sealed record whose bytes changed, a sealed record that has left the tree, and a record in the tree that no entry covers. **`--write` appends nothing when any existing seal fails**, so a rewritten record is reported instead of re-sealed at its new content. Pass `--init` once, alongside `--write`, to create the first manifest; it refuses to re-create an existing one, because re-sealing a whole tree at once is exactly how an edit gets absorbed. Run `--self-test` before trusting any of it: it plants each defect class in a scratch tree and proves the verifier rejects each one.
+
 After sealing, the record is never edited, moved, reformatted, or deleted. It stays a valid link target, but it is a historical snapshot and **not authority for current behavior.** Treat a retired record's claims as what was true then.
 
 ## Validate and report

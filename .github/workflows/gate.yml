@@ -33,6 +33,11 @@ jobs:
       - name: change-scope behavior
         run: node tests/change-scope.test.mjs
 
+      - name: Seal verifier self-test
+        # It ships a --self-test that plants each defect class; a shipped script
+        # whose own negative controls never run is a script nobody has watched fail.
+        run: node skills/curating-decision-records/scripts/seal-records.mjs --self-test
+
       - name: Manifests parse
         # Only parseability here. The skills[]-vs-tree and version-agreement
         # checks moved into the drift gate, where each has a planted defect
@@ -69,6 +74,7 @@ jobs:
             case "$file" in
               *.sh) bash -n "$file"; echo "  parsed $file" ;;
               *.py) python3 -m py_compile "$file"; echo "  parsed $file" ;;
+              *.mjs) node --check "$file"; echo "  parsed $file" ;;
               *)
                 if head -1 "$file" | grep -qE '^#!.*(bash|sh)$'; then
                   bash -n "$file"; echo "  parsed $file"

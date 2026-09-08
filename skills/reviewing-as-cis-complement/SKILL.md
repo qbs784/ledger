@@ -53,6 +53,16 @@ Verify stable text verbatim and dynamic behavior through a recorded scenario. Tr
 - Treat disagreement with a recorded decision as a design discussion, not an automatic veto. Records are evidence, not authority.
 - Changes visible in a transcript or a recorded scenario update that recording, or explain why none applies. Review an expected-output diff as a behavior change, not as formatting noise.
 
+## Delegating to a fresh reader
+
+Whoever writes a change cannot un-see the intent behind it, and an agent that just wrote the code carries every assumption that produced it — including the wrong ones. A subagent with no session context reads what is on the page instead of what was meant.
+
+**Delegate when you wrote the code under review and the change is large enough to repay the handoff**: it crosses an interface, reaches an enforcement path or a lifecycle, or alters what a user or a model receives. Delegate as well when you have already argued for this design once in the session, because having defended it makes you the reader least likely to find its flaw.
+
+Do not delegate a two-line change whose whole effect is visible in the diff — assembling the handoff costs more than reading it yourself. Do not delegate when the surrounding code the reviewer needs will not fit in the handoff, because **a review of a fragment is confidently wrong about the whole**. And never delegate a review you have not scoped (`ledger:scoping-a-change`): a fresh reader has no way to notice it was handed the wrong diff, so a wrong base comes back as a clean review.
+
+[references/reviewer-prompt.md](references/reviewer-prompt.md) is what to send — what the handoff must carry, and the checks above restated so the reviewer needs nothing else loaded. Send the artifact and the claims, not your reasoning about why the change is right: that reasoning is the contamination you delegated to escape.
+
 ## Reporting findings
 
 State the **defect, location, impact, and evidence**. Put a localized defect inline on the tightest relevant range; use a top-level comment for cross-cutting architecture, scope, or review-wide synthesis.
