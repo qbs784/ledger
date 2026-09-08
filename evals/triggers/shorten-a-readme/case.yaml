@@ -1,8 +1,8 @@
 schema_version: "1.0"
 name: shorten-a-readme
 execution:
-  prompt: "This README is too long. Cut it down."
-  max_turns: 3
+  prompt: "Our package README has grown to nine hundred lines and repeats itself in three places. Cut it down."
+  max_turns: 6
   allowed_tools: []
 runs: 1
 graders:
