@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 404" width="800" height="404" role="img"
+     aria-label="Where each of the sixteen skills sits in one iteration: an entry router, five numbered stages from set-up through curation, and two skills that apply at every stage.">
+  <title>Where each skill sits in one iteration</title>
+  <!--
+    Deliberately NOT organised by the five pillars: a pillar spans several
+    stages, so a five-cell colour mapping would invent a correspondence the
+    README does not claim. What this shows is placement in the loop, which is
+    otherwise only reconstructible by reading two separate tables.
+
+    Sized at 800 wide so a README renders it at roughly 1:1 instead of scaling
+    the labels down, and the base colours are mid-tones legible on both a white
+    and a dark background so it still reads if a renderer strips the media query.
+  -->
+  <style>
+    .head  { fill: #6e7781; font-weight: 600; font-size: 13px }
+    .box   { fill: none; stroke: #d0d7de }
+    .cross { fill: none; stroke: #3b82f6 }
+    .rule  { stroke: #d0d7de }
+    .acc   { fill: #3b82f6 }
+    .num   { fill: #ffffff; font-size: 10px; font-weight: 700 }
+    text   { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif }
+    .sk    { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; fill: #6e7781 }
+    .cap   { font-size: 11px; fill: #848d97 }
+    @media (prefers-color-scheme: dark) {
+      .head  { fill: #adbac7 }
+      .box   { stroke: #30363d }
+      .cross { stroke: #6cb6ff }
+      .rule  { stroke: #30363d }
+      .acc   { fill: #6cb6ff }
+      .num   { fill: #0d1117 }
+      .sk    { fill: #adbac7 }
+      .cap   { fill: #768390 }
+    }
+  </style>
+
+  <!-- entry -->
+  <rect class="cross" x="20" y="16" width="180" height="32" rx="6" stroke-width="1.5" />
+  <text class="sk" x="110" y="36" text-anchor="middle">using-ledger</text>
+  <text class="cap" x="212" y="36">start here, or when unsure which one applies</text>
+  <text class="cap" x="20" y="66">one iteration, in order</text>
+
+  <!-- row 1 -->
+  <g>
+    <rect class="box" x="20" y="78" width="240" height="146" rx="6" />
+    <circle class="acc" cx="42" cy="102" r="9" /><text class="num" x="42" y="106" text-anchor="middle">1</text>
+    <text class="head" x="58" y="106">Set up &amp; scope</text>
+    <line class="rule" x1="34" y1="120" x2="246" y2="120" />
+    <text class="sk" x="34" y="140">adapting-to-a-project</text>
+    <text class="sk" x="34" y="158">scoping-a-change</text>
+
+    <rect class="box" x="280" y="78" width="240" height="146" rx="6" />
+    <circle class="acc" cx="302" cy="102" r="9" /><text class="num" x="302" y="106" text-anchor="middle">2</text>
+    <text class="head" x="318" y="106">Decide &amp; design</text>
+    <line class="rule" x1="294" y1="120" x2="506" y2="120" />
+    <text class="sk" x="294" y="140">proving-code-is-dead</text>
+    <text class="sk" x="294" y="158">designing-concurrent-tests</text>
+    <text class="sk" x="294" y="176">proving-the-regression</text>
+
+    <rect class="box" x="540" y="78" width="240" height="146" rx="6" />
+    <circle class="acc" cx="562" cy="102" r="9" /><text class="num" x="562" y="106" text-anchor="middle">3</text>
+    <text class="head" x="578" y="106">Write &amp; document</text>
+    <line class="rule" x1="554" y1="120" x2="766" y2="120" />
+    <text class="sk" x="554" y="140">writing-complete-propositions</text>
+    <text class="sk" x="554" y="158">fact-checking-by-execution</text>
+    <text class="sk" x="554" y="176">trimming-session-vantage</text>
+  </g>
+
+  <!-- row 2 -->
+  <g>
+    <rect class="box" x="20" y="240" width="240" height="146" rx="6" />
+    <circle class="acc" cx="42" cy="264" r="9" /><text class="num" x="42" y="268" text-anchor="middle">4</text>
+    <text class="head" x="58" y="268">Review &amp; land</text>
+    <line class="rule" x1="34" y1="282" x2="246" y2="282" />
+    <text class="sk" x="34" y="302">reviewing-as-cis-complement</text>
+    <text class="sk" x="34" y="320">recording-ui-evidence</text>
+    <text class="sk" x="34" y="338">pushing-safely</text>
+
+    <rect class="box" x="280" y="240" width="240" height="146" rx="6" />
+    <circle class="acc" cx="302" cy="264" r="9" /><text class="num" x="302" y="268" text-anchor="middle">5</text>
+    <text class="head" x="318" y="268">Curate &amp; diagnose</text>
+    <line class="rule" x1="294" y1="282" x2="506" y2="282" />
+    <text class="sk" x="294" y="302">curating-decision-records</text>
+    <text class="sk" x="294" y="320">diagnosing-flakes</text>
+
+    <rect class="cross" x="540" y="240" width="240" height="146" rx="6" stroke-width="1.5" />
+    <text class="head" x="554" y="268">Applies at every stage</text>
+    <line class="rule" x1="554" y1="282" x2="766" y2="282" />
+    <text class="sk" x="554" y="302">what-counts-as-evidence</text>
+    <text class="sk" x="554" y="320">refusing-busywork</text>
+    <text class="cap" x="554" y="350">what a signal proves, and</text>
+    <text class="cap" x="554" y="366">what not to run</text>
+  </g>
+</svg>

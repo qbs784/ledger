@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <title>ledger — the engineering ledger for agent-authored codebases</title>
+  <!--
+    Source for social-preview.png, which GitHub shows at 1280x640 when the
+    repository link is shared. Colours are baked rather than theme-aware: the
+    output is a raster on someone else's surface, so there is no media query to
+    respond to. Render with:
+      rsvg-convert -w 1280 -h 640 assets/social-preview.svg -o assets/social-preview.png
+  -->
+  <rect width="1280" height="640" fill="#0d1117" />
+
+  <!-- the mark, enlarged: three checked entries and one still open -->
+  <g transform="translate(96 140) scale(1.95)" stroke-linecap="round">
+    <g stroke="#adbac7" stroke-width="7">
+      <line x1="0" y1="0" x2="44" y2="0" />
+      <line x1="0" y1="20" x2="54" y2="20" />
+      <line x1="0" y1="40" x2="36" y2="40" />
+      <line x1="0" y1="60" x2="48" y2="60" opacity="0.4" />
+    </g>
+    <g stroke="#6cb6ff" stroke-width="7" stroke-linejoin="round" fill="none">
+      <path d="M66 2 l6 7 l12 -15" />
+      <path d="M66 22 l6 7 l12 -15" />
+      <path d="M66 42 l6 7 l12 -15" />
+    </g>
+    <circle cx="73" cy="60" r="8" stroke="#768390" stroke-width="5" fill="none" />
+  </g>
+
+  <text x="380" y="232" fill="#e6edf3" font-size="104" font-weight="700"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" letter-spacing="-4">ledger</text>
+
+  <text x="382" y="306" fill="#adbac7" font-size="34"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">The engineering ledger for agent-authored codebases</text>
+
+  <text x="382" y="358" fill="#768390" font-size="26"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">every claim has an entry, every entry can be checked</text>
+
+  <line x1="96" y1="452" x2="1184" y2="452" stroke="#30363d" stroke-width="2" />
+
+  <text x="96" y="516" fill="#6cb6ff" font-size="24" font-weight="600"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">Verify the world, not the self-report</text>
+  <text x="96" y="556" fill="#768390" font-size="22"
+        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">A worker that did nothing can pass by claiming it succeeded.</text>
+
+  <text x="1184" y="556" fill="#6e7781" font-size="22" text-anchor="end"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">16 skills · MIT</text>
+</svg>

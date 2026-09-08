@@ -1,6 +1,15 @@
-# ledger
+<div align="center">
+
+<img src="assets/logo.svg" alt="ledger" width="300">
 
 **The engineering ledger for agent-authored codebases — every claim has an entry, every entry can be checked.**
+
+[![gate](https://github.com/qbs784/ledger/actions/workflows/gate.yml/badge.svg)](https://github.com/qbs784/ledger/actions/workflows/gate.yml)
+[![license MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+**English** · [简体中文](README.zh-CN.md)
+
+</div>
 
 Long-horizon agent development does not fail on bad commits. It fails on silent rot: prose stops describing the code, rules go unenforced, dead surface becomes undeletable because nobody can prove it is dead, and claims pile up that nobody can check. Every one of those is invisible at the change that causes it and expensive at the hundredth.
 
@@ -89,9 +98,11 @@ Disciplines are general; the commands that implement them are not. A skill that 
 
 Start with `adapting-to-a-project`. It writes that file — and it runs every command before recording it, because a wrong entry is worse than a missing one: a missing entry makes a skill stop and ask, while a wrong entry makes it run something and believe the result.
 
-This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 18 planted defects; a gate not shown to fail is not a gate.
+This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 21 planted defects; a gate not shown to fail is not a gate.
 
 ## Skills
+
+![Where each skill sits in one iteration: an entry router, five numbered stages from set-up through curation, and two skills that apply at every stage.](assets/loop.svg)
 
 | Skill | Reach for it when |
 |---|---|
@@ -134,20 +145,6 @@ From a clone, add the hook to your own settings rather than editing the plugin t
 The hook degrades to silence rather than breaking a session: a missing interpreter, a missing router file, or any read failure exits 0 with no output.
 
 **Prefer measuring first.** `evals/` holds trigger cases with near-miss negatives, and under-triggering is the failure the hook exists to fix — so find out whether you have it before paying for it on every session.
-
-## 中文简介
-
-**面向 agent 主笔代码库的工程账本 —— 每个主张都有条目，每个条目都可核查。**
-
-长程 agent 开发不是死于坏提交，而是死于**静默腐化**：散文不再描述代码、规则无人强制、死代码因无人能证明其已死而不敢删、主张堆积到无人能核查。每一种都在发生时看不见，在第一百次时变得昂贵。
-
-五支柱：**文档即基底**（一个事实一个家；规则一旦机械化就晋升进检查并从散文里删掉；文档靠执行核查）、**Agent 原生构造**（模型的散文系统性带着作者会话视角，模型积累投机表面积又快又匀，模型会声称成功）、**Loop 工程**（从验证过的基准算改动集，只跑会因这个回归失败的最窄检查，然后停手）、**长程自动化需要可存续记录**（按剩余决策价值留存，写替代时当场做 supersession 审计，退役层用内容哈希封存）、**防腐化是建造要求**（钉住死值的缺席，删之前先证明已死）。
-
-最核心的一条：**Verify the world, not the self-report** —— 断言必须**从外部**重跑命令或重读文件，并确认未打算触碰的文件逐字节相同。理由不是这样更整洁，而是**对 agent 自己的输出做关键词探测，会让什么都没做却声称成功的 agent 通过**。
-
-它**不**规定开发工作流、**不**替你选架构、**不**生成代码；它管的是代码库及其记录必须能证明什么。
-
-安装见上方 Install。所有项目专属命令都在 `.ledger.yml` 里，skill 正文一个命令都不写 —— 这条由 `tests/drift-gate.mjs` 强制，不只是约定。
 
 ## Contributing
 

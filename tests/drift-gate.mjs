@@ -308,17 +308,20 @@ function checkAdapterKeys(root, skills) {
  * eleven. Rather than fix the word, read it.
  */
 function checkAdvertisedDefectCount(root, plantedCount) {
-  const readmePath = join(root, 'README.md')
-  if (!existsSync(readmePath)) return
-  const readme = readFileSync(readmePath, 'utf8')
-  const match = /(\d+)\s+planted defects/.exec(readme)
-  if (match === null) {
-    if (readme.includes('planted defects')) fail('README.md', 'mentions planted defects without a count the gate can check')
-    return
-  }
-  const advertised = Number(match[1])
-  if (advertised !== plantedCount) {
-    fail('README.md', `advertises ${advertised} planted defects; the self-test plants ${plantedCount}`)
+  // Every README that states the number, in any language.
+  for (const file of ['README.md', 'README.zh-CN.md']) {
+    const path = join(root, file)
+    if (!existsSync(path)) continue
+    const text = readFileSync(path, 'utf8')
+    const match = /(\d+)\s+(?:planted defects|个种植进去的缺陷)/.exec(text)
+    if (match === null) {
+      if (/planted defects|种植进去的缺陷/.test(text)) fail(file, 'mentions planted defects without a count the gate can check')
+      continue
+    }
+    const advertised = Number(match[1])
+    if (advertised !== plantedCount) {
+      fail(file, `advertises ${advertised} planted defects; the self-test plants ${plantedCount}`)
+    }
   }
 }
 
@@ -415,6 +418,7 @@ function checkDocumentedSkillTables(root, skills) {
   const shipped = new Set(skills.map(skill => skill.dirName))
   const tables = [
     ['README.md', /^\|\s*`([a-z0-9-]+)`\s*\|/gm],
+    ['README.zh-CN.md', /^\|\s*`([a-z0-9-]+)`\s*\|/gm],
     // Backticks are required: an unquoted cell is prose (a result word, a note),
     // not a name to resolve.
     ['evals/README.md', /^\|\s*`([a-z0-9-]+)`\s*\|\s*`([a-z0-9-]+)`\s*\|(?:\s*`([a-z0-9-]+)`\s*\|)?/gm],
@@ -433,17 +437,80 @@ function checkDocumentedSkillTables(root, skills) {
     for (const name of named) {
       // A row's first cell may be an eval case name rather than a skill; only
       // hold names that look like skills but are not shipped.
-      if (!shipped.has(name) && file === 'README.md') {
+      if (!shipped.has(name) && file.startsWith('README')) {
         fail(file, `its skills table names ${name}, which is not a shipped skill`)
       }
       if (!shipped.has(name) && file !== 'README.md' && !existsSync(join(root, 'evals', 'triggers', name))) {
         fail(file, `names ${name}, which is neither a shipped skill nor an eval case`)
       }
     }
-    if (file === 'README.md') {
+    if (file.startsWith('README')) {
       for (const name of shipped) {
         if (!named.has(name)) fail(file, `its skills table omits the shipped skill ${name}`)
       }
+    }
+  }
+}
+
+/**
+ * Hold the translated README against the English one.
+ *
+ * Splitting a bilingual README into two files buys a real reader a real
+ * document and takes on a real risk: the copies drift, and nothing notices. A
+ * check cannot tell whether a translation is faithful — but it can tell whether
+ * a section went missing, whether the two stopped pointing at each other, and,
+ * most importantly, whether a command was translated. A translated command is
+ * a broken command, and it is the one kind of drift that silently breaks a
+ * reader who followed the instructions.
+ */
+function checkTranslationPairing(root) {
+  const english = join(root, 'README.md')
+  const translated = join(root, 'README.zh-CN.md')
+  if (!existsSync(english) || !existsSync(translated)) return
+
+  const en = readFileSync(english, 'utf8')
+  const zh = readFileSync(translated, 'utf8')
+
+  const heads = text => text.split('\n').filter(line => /^##\s/.test(line)).length
+  if (heads(en) !== heads(zh)) {
+    fail('README.zh-CN.md', `has ${heads(zh)} top-level sections against the English README's ${heads(en)} — a section was added or dropped on one side`)
+  }
+
+  // Fenced blocks carry commands and configuration. They must survive
+  // translation byte for byte, in the same order.
+  const fences = text => [...text.matchAll(/```[a-z]*\n([\s\S]*?)```/g)].map(match => match[1])
+  const enFences = fences(en)
+  const zhFences = fences(zh)
+  if (enFences.length !== zhFences.length) {
+    fail('README.zh-CN.md', `has ${zhFences.length} code blocks against the English README's ${enFences.length}`)
+  } else {
+    enFences.forEach((block, index) => {
+      if (block !== zhFences[index]) {
+        fail('README.zh-CN.md', `code block ${index + 1} differs from the English README — a translated command is a broken command`)
+      }
+    })
+  }
+
+  // Each side must offer the reader the other, or one of them is unreachable.
+  if (!en.includes('README.zh-CN.md')) fail('README.md', 'does not link the translated README, so nobody finds it')
+  if (!zh.includes('README.md')) fail('README.zh-CN.md', 'does not link back to the English README')
+}
+
+/**
+ * An asset nothing references is dead weight that nobody will notice going
+ * stale — the same argument the pack makes about unreferenced skill resources,
+ * applied to its own artwork.
+ */
+function checkAssetsReferenced(root) {
+  const dir = join(root, 'assets')
+  if (!existsSync(dir)) return
+  const prose = ['README.md', 'README.zh-CN.md', 'CONTRIBUTING.md']
+    .filter(file => existsSync(join(root, file)))
+    .map(file => readFileSync(join(root, file), 'utf8'))
+    .join('\n')
+  for (const entry of readdirSync(dir)) {
+    if (!prose.includes(`assets/${entry}`)) {
+      fail(`assets/${entry}`, 'is referenced by no README or contributor document, so nothing will notice it going stale')
     }
   }
 }
@@ -511,6 +578,8 @@ function run(root) {
   checkManifest(root, skills)
   checkVersionAgreement(root)
   checkDocumentedSkillTables(root, skills)
+  checkTranslationPairing(root)
+  checkAssetsReferenced(root)
   checkEvalCases(root, skills)
   checkAdvertisedDefectCount(root, plantedCases().length)
   return { skills, failures: [...failures] }
@@ -573,6 +642,21 @@ function plantedCases() {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
       writeFileSync(join(scratch, 'package.json'), JSON.stringify({ name: 'ledger', version: '9.9.9' }, null, 2))
       writeFileSync(join(scratch, '.claude-plugin', 'marketplace.json'), JSON.stringify({ name: 'ledger', plugins: [{ name: 'ledger', version: '0.1.0' }] }, null, 2))
+    }],
+    ['an asset nothing references', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      mkdirSync(join(scratch, 'assets'), { recursive: true })
+      writeFileSync(join(scratch, 'assets', 'orphan.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>')
+    }],
+    ['a translated command that drifted from the English one', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      writeFileSync(join(scratch, 'README.md'), '## One\n\n```sh\nnpm test\n```\n\nSee README.zh-CN.md\n')
+      writeFileSync(join(scratch, 'README.zh-CN.md'), '## \u4e00\n\n```sh\nnpm \u6d4b\u8bd5\n```\n\nSee README.md\n')
+    }],
+    ['a translated README missing a section', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      writeFileSync(join(scratch, 'README.md'), '## One\n\ntext\n\n## Two\n\ntext\n\nSee README.zh-CN.md\n')
+      writeFileSync(join(scratch, 'README.zh-CN.md'), '## \u4e00\n\ntext\n\nSee README.md\n')
     }],
     ['README skills table omitting a shipped skill', (skill, scratch) => {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')

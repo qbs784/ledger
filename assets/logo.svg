@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100" role="img" aria-label="ledger">
+  <title>ledger</title>
+  <!--
+    Three checked entries and one still open: every claim has an entry, every
+    entry can be checked, and the unchecked one is visible rather than assumed.
+
+    Base colours are mid-tones legible on both a white and a dark background, so
+    the mark still reads if a renderer strips the media query below rather than
+    collapsing into the background.
+  -->
+  <style>
+    .rule { stroke: #6e7781; stroke-width: 7; stroke-linecap: round }
+    .mark { stroke: #3b82f6; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; fill: none }
+    .open { stroke: #848d97; stroke-width: 5; fill: none }
+    .word { fill: #6e7781; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: 46px; font-weight: 600; letter-spacing: -1.5px }
+    @media (prefers-color-scheme: dark) {
+      .rule { stroke: #adbac7 }
+      .mark { stroke: #6cb6ff }
+      .open { stroke: #768390 }
+      .word { fill: #adbac7 }
+    }
+  </style>
+
+  <g class="rule">
+    <line x1="16" y1="16" x2="60" y2="16" />
+    <line x1="16" y1="36" x2="70" y2="36" />
+    <line x1="16" y1="56" x2="52" y2="56" />
+  </g>
+  <line class="rule" x1="16" y1="76" x2="64" y2="76" opacity="0.45" />
+
+  <g class="mark">
+    <path d="M82 18 l6 7 l12 -15" />
+    <path d="M82 38 l6 7 l12 -15" />
+    <path d="M82 58 l6 7 l12 -15" />
+  </g>
+  <circle class="open" cx="89" cy="76" r="8" />
+
+  <text class="word" x="124" y="59">ledger</text>
+</svg>

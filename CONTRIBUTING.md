@@ -68,6 +68,20 @@ git push --follow-tags
 
 Release notes go in the GitHub release, not in a changelog file. A changelog here would record what `git log` already records, and an unmaintained one is the exact rot this pack exists to name.
 
+## Branding assets
+
+`assets/` holds two SVGs used in the READMEs, plus the social-preview source and its rendered PNG. Every vector is hand-written — no design tool, no binary source to lose.
+
+- `logo.svg` and `loop.svg` are theme-aware: the palette is redefined under `prefers-color-scheme: dark`, and the base colours are mid-tones that clear a 3:1 contrast ratio against **both** a white and a dark background, so the artwork still reads if a renderer strips the media query rather than collapsing into the page. Every shape in `loop.svg` is stroke-only for the same reason — a filled card that stays light on a dark page is the failure this avoids.
+- `loop.svg` names all sixteen skills, and the drift gate fails if it names one that is not shipped or omits one that is.
+- `social-preview.png` is what a platform shows when the repository link is shared. It is a raster on someone else's surface, so its colours are baked rather than theme-aware. Regenerate it from its source after any edit:
+
+```sh
+rsvg-convert -w 1280 -h 640 assets/social-preview.svg -o assets/social-preview.png
+```
+
+Uploading it is a repository setting rather than a file in the tree: **Settings → General → Social preview**. The API does not expose it, so a fresh clone of this repository does not carry it.
+
 ## License
 
 By contributing you agree your work is licensed under the [MIT License](LICENSE). The upstream derivation notice in [NOTICE](NOTICE) is an obligation to a third party — leave it alone.
