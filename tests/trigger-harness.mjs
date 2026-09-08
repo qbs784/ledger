@@ -39,6 +39,13 @@ const KEEP_TEMP = args.includes('--keep-temp')
 // lose to a built-in or a personal skill on a full one. This mode measures that
 // stage instead.
 const REAL_ENV = args.includes('--real-environment')
+// The pack ships its router injection enabled, and `--plugin-dir` activates it
+// (verified: the hook fires even under `--setting-sources ""`, because a plugin
+// hook does not come from the operator's settings). So the default measurement
+// is of the SHIPPED configuration. To measure the descriptions alone, this mode
+// points the run at a copy of the pack with `hooks/` removed — the only way to
+// get a baseline now that the injection is on by default.
+const NO_ROUTER = args.includes('--no-router')
 const ONLY = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined
 
 /**
@@ -201,13 +208,30 @@ function scoreGrader(grader, calls) {
   }
 }
 
+/**
+ * The directory handed to `--plugin-dir`. Normally the pack itself; under
+ * --no-router a scratch copy without the injection, built once per process.
+ */
+let strippedPack
+function pluginDir() {
+  if (!NO_ROUTER) return PACK
+  if (strippedPack === undefined) {
+    strippedPack = mkdtempSync(join(tmpdir(), 'ledger-norouter-'))
+    cpSync(PACK, strippedPack, {
+      recursive: true,
+      filter: source => !source.includes(`${PACK}/hooks`) && !source.includes(`${PACK}/.git`),
+    })
+  }
+  return strippedPack
+}
+
 function buildArgv(prompt, execution) {
   const argv = [
     '-p', prompt,
     '--output-format', 'stream-json',
     '--verbose',                       // without it, -p + stream-json emits zero bytes and every negative passes vacuously
     '--max-turns', String(execution.max_turns ?? 3),
-    '--plugin-dir', PACK,
+    '--plugin-dir', pluginDir(),
     '--allowed-tools', ...TOOLS,
     '--permission-mode', 'dontAsk',
     '--model', MODEL,
@@ -310,7 +334,7 @@ console.log('='.repeat(72))
 console.log(DRY_RUN
   ? 'DRY RUN — an unresolvable model id; every preflight runs, nothing is billed.'
   : `SPENDS REAL MONEY — ${cases.length} billed run(s), capped at $${BUDGET_USD} each.`)
-console.log(`cli=${cliVersion}  model=${DRY_RUN ? 'dry-run probe' : MODEL}  mode=${REAL_ENV ? 'REAL ENVIRONMENT (operator settings loaded)' : `isolated (tools=${TOOLS.join(',')})`}`)
+console.log(`cli=${cliVersion}  model=${DRY_RUN ? 'dry-run probe' : MODEL}  mode=${REAL_ENV ? 'REAL ENVIRONMENT (operator settings loaded)' : `isolated (tools=${TOOLS.join(',')})`}  router=${NO_ROUTER ? 'STRIPPED (descriptions alone)' : 'shipped (injected)'}`)
 console.log('')
 console.log('This is not `claude plugin eval`. It counts only Skill calls that actually')
 console.log('loaded, and runs a single arm — so a pass shows the skill fired, not that this')
@@ -346,13 +370,14 @@ for (const testCase of cases) {
     caseState = 'INVALID'
     graderLines.push(`  INVALID  ${stream.unparseable} unparseable stream line(s) — a lost assistant line is a lost tool call`)
   }
-  if (stream.hooks > 0) {
-    if (REAL_ENV && !stream.routerInjected) {
-      graderLines.push(`  note      ${stream.hooks} of the operator's hook(s) fired — part of the real environment, and none injected this pack's router`)
-    } else {
-      caseState = 'INVALID'
-      graderLines.push(`  INVALID  ${stream.hooks} hook(s) fired and the router was injected; this would measure the hook, not the description`)
-    }
+  // Router injection is the shipped configuration, so it is reported rather
+  // than treated as contamination. It is only a defect when a baseline run
+  // asked for the descriptions alone and got the injection anyway.
+  if (NO_ROUTER && stream.routerInjected) {
+    caseState = 'INVALID'
+    graderLines.push('  INVALID  --no-router was requested but the router was injected anyway; this is not a baseline')
+  } else if (stream.hooks > 0) {
+    graderLines.push(`  router    ${stream.routerInjected ? 'injected (shipped configuration)' : 'not injected'} — ${stream.hooks} hook(s) fired`)
   }
   if (DRY_RUN) {
     const skills = stream.init?.skills?.length ?? 0

@@ -30,6 +30,22 @@ Run them from the repository root:
 claude plugin eval . --no-publish
 ```
 
+## Three axes, not one
+
+The harness has three independent switches, and the numbers only mean something once you know where all three sat.
+
+```sh
+node tests/trigger-harness.mjs                                        # isolated, router shipped
+node tests/trigger-harness.mjs --real-environment                     # the reader's actual stage
+node tests/trigger-harness.mjs --real-environment --no-router         # descriptions alone
+```
+
+**`--no-router` exists because the injection is on by default.** `--plugin-dir` activates the pack's own `hooks/hooks.json`, and it fires even under `--setting-sources ""` — a plugin hook does not come from the operator's settings, so isolation does not strip it. The only way to measure a description without the router in context is to point the run at a copy of the pack with `hooks/` removed, which is what this mode builds.
+
+So the default measurement is of the **shipped configuration**: what a person who installs this pack actually gets. `--no-router` is the baseline that says what the descriptions do on their own. The difference between the two is the injection's contribution, and it is the only number that justifies the injection's per-session cost.
+
+Router injection is therefore reported, not treated as contamination. It is a defect in exactly one case: a `--no-router` run in which the router was injected anyway, which is not a baseline and is marked `INVALID`.
+
 ## Isolated is the optimistic number
 
 The offline harness has two modes, and the difference between them is the interesting part.
