@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "description": "The engineering ledger for agent-authored codebases: documentation as substrate, evidence over self-report, and rot resistance as a build requirement. Extracted from a running agent-authored codebase.",
   "author": {
-    "name": "kk"
+    "name": "qbs784",
+    "url": "https://github.com/qbs784"
   },
+  "homepage": "https://github.com/qbs784/ledger",
+  "repository": "https://github.com/qbs784/ledger",
   "license": "MIT",
   "keywords": [
     "agent",

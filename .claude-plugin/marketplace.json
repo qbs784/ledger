@@ -1,14 +1,22 @@
 {
   "name": "ledger",
   "description": "The engineering ledger for agent-authored codebases.",
-  "owner": { "name": "kk" },
+  "owner": {
+    "name": "qbs784",
+    "url": "https://github.com/qbs784"
+  },
   "plugins": [
     {
       "name": "ledger",
       "source": "./",
       "version": "0.1.0",
       "description": "Documentation as substrate, evidence over self-report, and rot resistance as a build requirement.",
-      "license": "MIT"
+      "license": "MIT",
+      "author": {
+        "name": "qbs784",
+        "url": "https://github.com/qbs784"
+      },
+      "homepage": "https://github.com/qbs784/ledger"
     }
   ]
 }

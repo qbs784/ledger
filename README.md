@@ -70,14 +70,14 @@ Every rule here traces to a commit, a postmortem, or a decision record — **inc
 ## Install
 
 ```sh
-claude plugin marketplace add <owner>/ledger
+claude plugin marketplace add qbs784/ledger
 claude plugin install ledger@ledger
 ```
 
 Or run it from a clone:
 
 ```sh
-git clone https://github.com/<owner>/ledger
+git clone https://github.com/qbs784/ledger
 claude --plugin-dir ./ledger
 ```
 
