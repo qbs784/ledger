@@ -1,6 +1,6 @@
 ---
 name: refusing-busywork
-description: Use when choosing which checks to run before a commit or push; when about to run a full suite or repeat a check that already passed; when trimming prose, deleting code, or archiving records toward a count; or when a refresh, rewrite, or cleanup mechanism exists and you are deciding whether to use it. DO NOT invoke to judge what a passing check proves — route that to ledger:what-counts-as-evidence.
+description: Use when choosing which checks to run before a commit or push; when about to run a full suite or repeat a check that already passed; when trimming prose, deleting code, or archiving records toward a count; or when a refresh, rewrite, or cleanup mechanism exists and you are deciding whether to use it. DO NOT invoke to judge what a passing check proves (ledger:what-counts-as-evidence) or whether an edit is itself right rather than ceremony (ledger:writing-complete-propositions).
 ---
 
 # Refusing busywork

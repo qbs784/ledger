@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node tests/drift-gate.mjs && node tests/change-scope.test.mjs && node skills/curating-decision-records/scripts/seal-records.mjs --self-test",
     "test:self": "node tests/drift-gate.mjs --self-test",
-    "test:triggers": "node tests/trigger-harness.mjs"
+    "test:triggers": "node tests/trigger-harness.mjs",
+    "analyze:descriptions": "node tests/description-overlap.mjs"
   },
   "license": "MIT"
 }
