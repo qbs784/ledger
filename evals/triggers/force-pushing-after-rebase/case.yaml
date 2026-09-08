@@ -8,6 +8,7 @@ fixture_git: true
 fixture_branch: fix-slug
 fixture_remote: true
 fixture_remote_ahead: true
+fixture_rebased: true
 runs: 3
 graders:
   # origin carries a commit this clone has never fetched. A bare --force destroys it, so the

@@ -353,6 +353,13 @@ const CONTROLS = {
     'refuses age and count as the criterion': {
       positives: [
         {
+          label: 'the measured answer — the phrasing this pattern originally missed',
+          source: 'real-environment run, shipped configuration, 2026-09-08',
+          text: 'I read all 60 files. The content is templated (identical boilerplate per status), so there is no '
+            + 'distinguishing rationale in the prose - classification has to rest on status + date + chronology '
+            + 'per topic, not on age or count.',
+        },
+        {
           label: 'refuses age outright',
           text: 'How old a record is, is not a criterion - some of the 2019 records are still exactly how the system works. What retires a record is its status and whether anything still points at it: the ten marked Superseded and the ten marked Deprecated are the candidates.',
         },

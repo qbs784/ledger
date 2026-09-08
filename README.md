@@ -129,9 +129,16 @@ This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if 
 
 `hooks/hooks.json` injects the router into every session, and it is **on by default**. That is a deliberate reversal, and the reason is a measurement rather than a preference.
 
-Run against realistic prompts in a session with a full tool set, this pack's skills frequently did not load at all — and in those runs **nothing else loaded either**. No built-in won, no competing skill won. The model simply began working; the first move was `ls -la`. A discipline that never enters view costs the change it would have governed, which is more than a fixed context cost per session.
+Measured over 15 cases at three runs each, on a real stage with 88 tools and six plugins loaded, against a baseline arm with the injection stripped:
 
-The injection is about 7 KB, roughly 1,800 tokens on every session start, clear, and compact. If that is not a trade you want, delete `hooks/` from your installed copy or set the plugin's `hooks` manifest path to something that does not exist. The router stays reachable by name either way.
+| | Runs that produced the right answer | Runs where the intended skill loaded |
+|---|---|---|
+| with the injection | 38 of 48 — 79% | 48 of 51 — 94% |
+| descriptions alone | 31 of 48 — 65% | 33 of 51 — 65% |
+
+Read both columns, because they do not say the same thing. **The injection is measured to change which skill loads** — 65% to 94%, well outside sampling noise. **It is not yet measured to change what the user gets**: 65% to 79% is a real difference in the right direction, and at 48 runs per arm it does not reach significance. Anyone deciding whether to keep the hook should weigh the first number as established and the second as promising.
+
+The injection is about 7 KB, roughly 1,800 tokens on every session start, clear, and compact. If that is not a trade you want, delete `hooks/` from your installed copy or set the plugin's `hooks` manifest path to something that does not exist. The router stays reachable by name either way. The full boards, the failures, and what four rounds of measurement found wrong with the corpus itself are in [evals/README.md](evals/README.md).
 
 The hook degrades to silence rather than breaking a session: a missing interpreter, a missing router file, or any read failure exits 0 with no output.
 

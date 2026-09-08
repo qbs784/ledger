@@ -16,7 +16,7 @@ graders:
     target: last_message
     flags: i
     match: contains
-    pattern: '(age|how old|years old|date|sixty|60 files)[\s\S]{0,170}(is not|isn.t|not a|never a)[\s\S]{0,70}(criteri|reason|basis|signal|argument)|(status|superseded|referenc)[a-z]*[\s\S]{0,120}(not (its |the )?(age|date))'
+    pattern: '(not|rather than|instead of)\s+(on\s+|by\s+|the\s+|its\s+)?(age|how old|date|count|length|number of files)|(age|how old|years old|date|sixty|60 files)[\s\S]{0,170}(is not|isn.t|not a|never a|not the)[\s\S]{0,70}(criteri|reason|basis|signal|argument)|(status|superseded|referenc)[a-z]*[\s\S]{0,140}(not|rather than|instead of)\s+(on |by |its |the )?(age|date|count)'
   - type: tool_used
     name: loads curating-decision-records
     tool: Skill

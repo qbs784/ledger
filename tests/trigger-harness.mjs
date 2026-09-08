@@ -475,6 +475,20 @@ function runCase(testCase, capturesDir, suffix = '') {
         // Deliberately NOT fetched: the local repository still believes it is up
         // to date, which is the state a person is actually in.
       }
+
+      // "I rebased my branch after review" — so the local branch has to have
+      // been rewritten. Without this the local tip is merely an ancestor of
+      // origin's, and the right answer becomes `merge --ff-only` rather than
+      // anything involving a force push. That is not a hypothetical: a measured
+      // run answered exactly that, correctly, and the case scored it a failure.
+      if (String(testCase.doc.fixture_rebased) === 'true') {
+        if (!existsSync(join(caseDir, 'fixture-rebased'))) {
+          throw new Error(`${testCase.name}: fixture_rebased is set but fixture-rebased/ does not exist`)
+        }
+        cpSync(join(caseDir, 'fixture-rebased'), cwd, { recursive: true })
+        git('add', '-A')
+        git('commit', '-q', '--amend', '--no-edit')
+      }
     }
   }
   // Which files the run created. The runner's `files` target and `file_exists`

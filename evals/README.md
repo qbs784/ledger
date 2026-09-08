@@ -2,27 +2,31 @@
 
 A skill in a plugin has no always-loaded instruction file behind it. Its `description` is the entire trigger surface, which makes description quality a measurable property rather than a matter of taste — and the failure mode is under-triggering, silently, on exactly the tasks the skill was written for.
 
-These cases measure that. Each pairs a realistic prompt with `tool_used` graders asserting which skill loads, and several assert a **near-miss negative** — a skill that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
+These cases measure that. But triggering is not the goal — a skill that loads and then produces the wrong answer has failed, and a corpus that grades only the route cannot tell the two apart. So each case pairs a realistic prompt with a **fixture** giving the model something real to work on, an **outcome grader** asserting what the answer must contain, and a route grader recording which skill loaded.
 
-There is one case per **model-invocable** skill — the drift gate fails if such a skill has no case asserting it loads, because a description nobody measured is a claim with no evidence behind it. The router is exempt and has no case: it carries `disable-model-invocation: true`, so a trigger case for it could only ever fail, and requiring an impossible case would make this corpus dishonest rather than complete. Three cases also carry a **near-miss negative**, on the boundaries most likely to be confused:
+There is one case per **model-invocable** skill — the drift gate fails if such a skill has no case asserting it loads, because a description nobody measured is a claim with no evidence behind it. The router is exempt and has no case: it carries `disable-model-invocation: true`, so a trigger case for it could only ever fail, and requiring an impossible case would make this corpus dishonest rather than complete.
 
-| Case | Must load | Must not load |
-|---|---|---|
-| `adapter-bootstrap` | `adapting-to-a-project` | — |
-| `adding-a-validator` | `proving-the-regression` | — |
-| `change-narration-cleanup` | `trimming-session-vantage` | — |
-| `claiming-done` | `what-counts-as-evidence` | — |
-| `deleting-an-unused-option` | `proving-code-is-dead` | — |
-| `documenting-a-command` | `fact-checking-by-execution` | — |
-| `finding-the-change-set` | `scoping-a-change` | — |
-| `flake-investigation` | `diagnosing-flakes` | — |
-| `force-pushing-after-rebase` | `pushing-safely` | — |
-| `narrow-check-selection` | `refusing-busywork` | — |
-| `new-fixture-isolation` | `designing-concurrent-tests` | `diagnosing-flakes` |
-| `recording-a-ui-demo` | `recording-ui-evidence` | — |
-| `retiring-a-decision-record` | `curating-decision-records` | `proving-code-is-dead` |
-| `reviewing-a-diff` | `reviewing-as-cis-complement` | — |
-| `shorten-a-readme` | `writing-complete-propositions` | `trimming-session-vantage` |
+| Case | Primary: outcome grader | Route (display only) | Must not load | Fixture |
+|---|---|---|---|---|
+| `adapter-bootstrap` | writes the adapter file *(file_exists)* | `adapting-to-a-project` | — | files |
+| `adding-a-validator` | requires the check to be seen rejecting *(regex)* | `proving-the-regression` | — | files |
+| `change-narration-cleanup` | names the narration rather than only tidying prose *(regex)* | `trimming-session-vantage` | — | files |
+| `claiming-done` | refuses coverage and green CI as evidence of done *(regex)*, plus an `llm` rubric that only the official runner can score | `what-counts-as-evidence` | — | files |
+| `deleting-an-unused-option` | finds the indirect reader before agreeing to delete *(regex)* | `proving-code-is-dead` | — | files |
+| `documenting-a-command` | states the port the source actually declares *(regex)* | `fact-checking-by-execution` | — | files |
+| `finding-the-change-set` | uses the retargeted base rather than main *(regex)* | `scoping-a-change` | — | git |
+| `flake-investigation` | reaches the expiry-window cause *(regex)* | `diagnosing-flakes` | — | files |
+| `force-pushing-after-rebase` | requires a lease on the force push *(regex)* | `pushing-safely` | — | git |
+| `narrow-check-selection` | names the narrow lane rather than the suite *(regex)* | `refusing-busywork` | — | files |
+| `new-fixture-isolation` | allocates the port and directory rather than fixing them *(regex)* | `designing-concurrent-tests` | `diagnosing-flakes` | files |
+| `recording-a-ui-demo` | anchors the recording to a served build or a commit *(regex)* | `recording-ui-evidence` | — | files |
+| `retiring-a-decision-record` | refuses age and count as the criterion *(regex)* | `curating-decision-records` | `proving-code-is-dead` | files |
+| `reviewing-a-diff` | review names the cache-before-confirm defect *(regex)* | `reviewing-as-cis-complement` | — | git |
+| `shorten-a-readme` | identifies the repeated presentation rather than only cutting length *(regex)* | `writing-complete-propositions` | `trimming-session-vantage` | files |
+
+Every case carries an outcome grader as its **primary** check, because the runner excludes a `tool_used: Skill` grader for the plugin under test from the score in both arms. The route column is therefore reported, never scored — it answers "which skill did this", not "did it work". Three cases also carry a **near-miss negative**: a sibling that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
+
+Every case ships a fixture, and each was verified by running it rather than by reading it — the flaky test genuinely fails intermittently, the claimed 100% coverage really is 100%, the "unused" option really is read, the 900-line README really is 900 lines, and the remote really does carry a commit the clone has never fetched. A case with no fixture cannot measure whether a skill helped, only whether it loaded while the model explained that it could not proceed.
 
 Run them from the repository root:
 
@@ -72,122 +76,87 @@ node tests/trigger-harness.mjs --dry-run     # free: preflights and isolation fi
 node tests/trigger-harness.mjs               # billed: one model call per case
 ```
 
-It is deliberately **not** the official runner and its numbers are not the runner's. It isolates harder (`--setting-sources ""`, which removes the operator's personal skills, plugins, MCP servers and hooks), it counts only Skill calls that actually loaded where the runner counts any `tool_use` block, and it runs a single arm — so a pass shows the skill fired, not that this pack caused it to. It is never run in CI: the calls are billed and nondeterministic, which is the profile `diagnosing-flakes` warns against.
+It is deliberately **not** the official runner and its numbers are not the runner's. It isolates harder (`--setting-sources ""`, which removes the operator's personal skills, plugins, MCP servers and hooks), it counts only Skill calls that actually loaded where the runner counts any `tool_use` block, and it scores `regex` and `file_exists` graders but has no judge, so an `llm` grader comes back `UNSCORED` rather than guessed at. It is never run in CI: the calls are billed and nondeterministic, which is the profile `diagnosing-flakes` warns against.
 
-A case may ship a `fixture/` directory beside its `case.yaml`; its contents are copied into the scratch working directory before the run.
+### Fixtures
 
-## First measurement
+A case's `fixture/` directory is copied into the scratch working directory before the run. Git state is declared rather than scripted — a `fixture.sh` per case would be shorter and would mean that cloning this repository and running the suite executes shell contributed by whoever sent the last pull request, so the harness owns every command instead:
 
-Taken 2026-09-08 against CLI 2.1.260, model `sonnet`, at one run per case.
+| Declaration | What it builds |
+|---|---|
+| `fixture_git: true` | `fixture/` committed as `main` |
+| `fixture_branch: <name>` | the working branch, carrying `fixture-branch/` |
+| `fixture_other_base: <name>` | a second candidate base carrying `fixture-other-base/`, for a retargeted branch |
+| `fixture_base_moved: true` | a later commit on `main` from `fixture-base-moved/`, so the merge base is not main's tip |
+| `fixture_remote: true` | a bare `origin` in a sibling directory — no network |
+| `fixture_remote_ahead: true` | a commit pushed to `origin` by someone else, deliberately **not** fetched |
+| `fixture_rebased: true` | the local tip rewritten with `fixture-rebased/`, so the branches genuinely diverge |
 
-| Case | Skill asserted | Result |
+## Four rounds of running it, and what each round found
+
+Every round of measurement found defects in the corpus before it found anything about a description. That is not a preamble to the results — it is the most transferable thing in this file, because the same shape recurred four times: **a red check is a question, and the first thing to check is the check.**
+
+| Round | What was measured | What it actually found |
 |---|---|---|
-| `flake-investigation` | `diagnosing-flakes` | loaded |
-| `narrow-check-selection` | `refusing-busywork` | loaded |
-| `change-narration-cleanup` | `trimming-session-vantage` | loaded |
-| `claiming-done` | `what-counts-as-evidence` | loaded (case PARTIAL — the `llm` grader is unscorable offline) |
-| `new-fixture-isolation` | `designing-concurrent-tests` | loaded; near-miss negative held |
-| `shorten-a-readme` | `writing-complete-propositions` | loaded; near-miss negative held |
+| 1 | six cases, isolated, one run | Two broken cases, not two broken skills. Runs started in an empty directory, so a prompt naming a file sent the model globbing for something absent; and `max_turns: 3` ended a run mid-read. Fixed by adding fixtures and raising the limit — **not** by rewriting prompts until they passed. |
+| 2 | fifteen cases, real environment, both arms, one run | A board of 13 PASS against 9, published, then invalidated by reading its own transcripts: only 2 of 15 shipped runs produced any answer at all. Thirteen cases still had no fixture, `max_turns` was below the runner's default, and `runs: 1` opted out of its floor. |
+| 3 | one case, repeatedly | `reviewing-a-diff` failed four times for four different reasons — empty directory, turn limit, the router's own wording read as an adoption gate, and a built-in winning the prompt. Editing the wording the model had quoted removed the stated reason and not the behaviour. |
+| 4 | fifteen cases, both arms, three runs, outcome graders | The results below. Both remaining failures turned out to be defects in the case rather than in the pack: one fixture that never did what its prompt said, and one grader too narrow to accept a correct answer. |
 
-**Read this as six single samples, not as a rate.** A skill that fires half the time shows green half the time here. Claiming 90% or better from an all-green board needs n≥29.
-
-The five file-independent cases were measured in one pass; `shorten-a-readme` was measured separately after the fixes below, so this table is a composite rather than one clean board. A fresh full run is one command.
-
-### What the first run found was two broken cases, not two broken skills
-
-Both failures were the harness's and the corpus's, which is the ordinary outcome of running a test for the first time:
-
-- Every run starts in an empty scratch directory, so a prompt naming a file sent the model globbing for something that did not exist; it asked a clarifying question and never reached a skill decision. Fixed by the `fixture/` mechanism — **not** by rewriting the prompt until it passed, which would be tuning the test to the answer.
-- `max_turns: 3` was too low for a case that has to locate and read a file: the run ended mid-read, before any decision. Raised to 6 for that case only.
-
-## Retracted: the two boards below do not measure what they claim
-
-**Read this section before the numbers under it.** The boards were published, then invalidated by inspecting the transcripts they came from. They are kept rather than deleted because a retraction that removes the evidence is not a retraction.
-
-Both arms were graded solely by `tool_used: Skill` — did the asserted skill load. Nothing asserted that the model then did the task. Reading the 31 recorded final answers shows what that missed:
-
-| Arm | Produced a real answer to the task | Refused: "this directory is empty" | Produced no final answer at all (`error_max_turns`) |
-|---|---|---|---|
-| shipped configuration | **2 of 15** | 7 | 6 |
-| `--no-router` baseline | 4 of 15 | 10 | 2 |
-
-**Thirteen of the fifteen cases ship no fixture.** Only `reviewing-a-diff` and `shorten-a-readme` have one, so in the other thirteen the model opened an empty scratch directory and had nothing to work on. The `fixture/` mechanism was introduced to fix exactly this after the first measurement, and then applied to two cases while the corpus grew to fifteen.
-
-So the boards recorded whether a skill loaded during runs in which the model was mostly explaining that it could not proceed. A `PASS` there means the description fired. It does not mean the skill helped, and in thirteen cases the run could not have shown help even in principle.
-
-The direction of the error flatters the pack, which is the direction that most needs saying out loud. And one number in it points at a cost rather than a benefit: **the shipped arm ran out of turns three times as often as the baseline** — six against two. The injection adds roughly 1,800 tokens and induces a skill-load round trip, both of which consume the turn budget the case allows. That is a plausible mechanism, not a demonstrated one; what is demonstrated is the correlation and that nobody was watching for it.
-
-**What is therefore not established:** that the injection is worth its cost. The `4 of 5 failures fixed` claim below is measured against a grader the official runner excludes from scoring, in runs that mostly produced nothing.
-
-**What is still established:** every baseline failure was `no Skill call` rather than a competitor win, and the census of 227 real transcripts. Those did not depend on the answers.
-
-The repair in progress, in order of what actually blocks a valid measurement: a fixture for every case, so there is something to do; an outcome grader for every case, so doing it is what gets scored; `runs: 3`; and `max_turns` set from what the fixture actually requires. The gate now fails a case that is graded only by `tool_used` or that sets `runs` below 3.
+The corpus also violated three floor invariants the official runner documents as non-negotiable, and did so for its entire existence until they were checked: every case was graded only by `tool_used` (which the runner excludes from the score), every case set `runs: 1` against a default of 3, and no case had an outcome grader. The gate now fails all three, each with a negative control.
 
 ## What the injection is worth
 
-Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, one run per case, **in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers all loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases.
+Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, **three runs per case in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases: 45 runs each, 90 model calls, $17.37 of token pricing.
+
+Every case is graded by an **outcome** grader — did the answer contain what the user would have noticed the absence of — plus a display-only `tool_used` grader recording which skill loaded. The runner excludes the second from the score in both arms, so the two columns below are not interchangeable, and the difference between them is the finding.
+
+| | Runs that produced the right answer | Runs where the asserted skill loaded |
+|---|---|---|
+| shipped configuration | **38 of 48 — 79%** | 48 of 51 — 94% |
+| `--no-router`, descriptions alone | **31 of 48 — 65%** | 33 of 51 — 65% |
+| difference | **+14 points** | +29 points |
+
+**The injection moves routing more than twice as much as it moves outcomes.** That is the number worth carrying away, and it is a correction: an earlier version of this file published a board of 13 PASS against 9 that was built on routing alone, and so overstated the injection's value by roughly a factor of two.
+
+The two differences also do not stand equally. Treating each run as an independent sample, the routing difference is z ≈ 3.9 (p < 0.0001) and the outcome difference is z ≈ 1.6 (p ≈ 0.11). So: **the injection is measured to change which skill loads, and is not yet measured to change what the user gets.** Ruling that in or out needs more runs, not more argument. Reported as case verdicts, where a grader that passes some runs and not others is `PARTIAL` rather than rounded:
 
 | Arm | PASS | PARTIAL | FAIL |
 |---|---|---|---|
-| `--no-router` — descriptions alone | 9 | 1 | 5 |
-| shipped configuration — `hooks/hooks.json` injects the router | 13 | 1 | 1 |
+| shipped configuration | 7 | 6 | 2 |
+| `--no-router` | 3 | 7 | 5 |
 
-**Four of the five failures were fixed by the injection** — as measured by whether a skill loaded. See the retraction above: that is not the same as the injection being worth its cost, and the transcripts behind these cells show the model mostly produced no answer at all.
+### What the failures were, and what they were not
 
-Two things about the baseline are worth stating plainly, because both cut against the pack:
+Not one failure on either arm was a competitor winning the prompt, and not one was a description failing to fire — in these boards the asserted skill loaded on 94% of shipped runs. Every failure was an outcome failure, which is the class the previous corpus could not see at all. Two of them turned out not to be failures of the pack:
 
-- **Every one of the five baseline failures was `no Skill call`.** Not one was lost to a competitor. With 88 tools available the model simply started working — the first move in the transcript is `ls -la`. So the failure mode these descriptions have is not "a stronger skill won"; it is "no skill was considered at all", which is the failure a description cannot fix, because a description is only read once something is already looking for a skill.
-- **The board is 15 cases, and the baseline run printed 16.** The extra row was `which-skill-applies`, which asserted that the router loads; it was retired when the router took `disable-model-invocation: true`, since a human-only skill can never satisfy it. It passed in that run. Excluding it is what makes the two arms comparable, and it is why the baseline reads 9 rather than 10.
+- **`force-pushing-after-rebase`** — `pushing-safely` loaded 3/3, and `--force-with-lease` appeared 0/3. Reading the answer showed why: it fetched, found the local tip was an *ancestor* of origin rather than a divergent rewrite, and correctly answered `git merge --ff-only` while naming the teammate's commit a bare force push would drop. **The fixture was wrong**, not the skill and not the model: the prompt says the branch was rebased and the fixture had never rebased anything. It now rewrites the local tip, so the branches genuinely diverge (verified: two commits unique to origin, one to the clone).
+- **`retiring-a-decision-record`** — `curating-decision-records` loaded 3/3, outcome 0/3. The answer classified 60 records by status and chronology and said outright that it rested on those *"not on age or count"* — which is exactly what the grader asks for, in words the pattern did not accept. **A false negative in the grader.** The pattern was widened and that measured sentence is now a pinned positive control, so the phrasing cannot be lost again.
 
-**Read each board as 15 single samples, not as a rate.** A skill that fires half the time shows green half the time here. The 4-of-5 difference is larger than sampling noise can account for in one direction, but a repeat run will not reproduce these boards cell for cell.
+Both were repaired after this board was taken and re-run; their cells above are the pre-repair ones. The general lesson is the one the pack already makes elsewhere: a red check is a question, and the first thing to check is the check.
 
-### The one case that stayed red
+### Read the boards this way
 
-`reviewing-a-diff` has been attempted six times and has never passed. Two of those attempts measured nothing — the setup was broken — and four are real measurements. The sequence matters, because the last two runs corrected a conclusion drawn from the third.
+- **Three runs per case, 15 cases.** A `PARTIAL` is a real intermittency, not noise to be re-rolled. An all-green board at three runs still cannot support a claim of 90% or better, which needs n ≥ 29.
+- **The runs are paired by case**, so the independence the z-scores above assume is only approximate. A paired test on 15 cases is the right analysis and has not been done.
+- **Outcome graders are hand-written regular expressions**, pinned from both sides in [`tests/grader-controls.mjs`](../tests/grader-controls.mjs) — 72 controls, positives quoting real recorded answers where one exists, and every case carrying a negative written specifically to defeat that pattern's structure. Two such negatives have already caught a pattern that did not discriminate. That protects against a pattern that accepts anything; it does not protect against one that is too narrow, which is what `retiring-a-decision-record` was.
 
-**Two setup defects, found by running it:**
+### The previous boards, and why they are gone
 
-1. **Empty scratch directory** — the prompt named a branch and there was no repository, so the model went looking for a file that did not exist and asked a clarifying question. Fixed by `fixture_git: true`, which builds a real two-commit repo with the change on a `review-me` branch.
-2. **`max_turns: 3`** — the run ended mid-read, before any skill decision. Raised to 6.
+An earlier measurement published 13 PASS out of 15 for the shipped configuration against 9 for the baseline, and called it four failures fixed. Inspecting the 31 transcripts behind it showed that in the shipped arm only **2 of 15 runs produced any real answer**: seven refused with some form of "this directory is empty", and six ended at `max_turns` with no final message at all. Thirteen of the fifteen cases shipped no fixture, so the model opened an empty scratch directory and had nothing to work on; `max_turns` was set to 3–6 against the runner's default of 10, and `runs` to 1 against its default of 3.
 
-**Four measurements, with the fixture in place:**
+Those boards recorded whether a skill loaded during runs in which the model was mostly explaining that it could not proceed. They are not reproduced here because the corpus they were taken from no longer exists — every case now ships a verified fixture, and the floors are enforced by the gate.
 
-| # | Router | Description | Observed |
-|---|---|---|---|
-| 1 | shipped, precondition wording | original | `no Skill call` |
-| 2 | shipped, section rewritten | original | `code-review(loaded)` |
-| 3 | shipped, section rewritten | rewritten | `no Skill call` |
-| 4 | `--no-router` | rewritten | `code-review(loaded)` |
+## What is still open
 
-Run 1 gave a legible reason: *"No `.ledger.yml` here, so the ledger pack isn't actually adopted in this repo — I'll skip that overhead. It's a small single-file diff, so let me just read it directly."* The router had invited exactly that, by saying "if that file does not exist, start with `adapting-to-a-project`" — which reads as a precondition. So the router gained a section stating outright that a missing adapter does not mean the disciplines do not apply.
+**The official runner has never run these.** `claude plugin eval` reports `plugin eval is currently in early access` on this machine, so every number in this file came from the offline harness. Three schema defects were repaired against the runner's own definition before that was true of anything: every case was missing the required `schema_version`; every grader spelled `arm: with_only` where the schema is `enum(["with-only", "both"])`; and both near-miss negatives set `max: 0` with no `min`, leaving an unsatisfiable range that would have parsed green forever.
 
-Run 3 is the one worth keeping, because it undid that conclusion. With the section in place, the model's *first* command was `ls -la; test -f .ledger.yml && echo HAS_LEDGER_YML || echo NO_LEDGER_YML`. It found no adapter and then loaded nothing at all. **Editing the prose the model had quoted did not change the behaviour; it removed the stated reason for it.** The new section plausibly made things worse: it names `.ledger.yml` three times, raising the file's salience in the very context where the goal was to lower it. That is a mechanism worth naming, not a demonstrated one — a single run cannot separate it from noise.
+Open, in the order that would change a conclusion here:
 
-Run 4 is the cleanest single result here. With the router stripped, so the description is the whole trigger surface, a Claude Code built-in won: `code-review` owns the words "review this diff" outright. Two descriptions, four runs, zero loads of the asserted skill. **What has been ruled out by measurement rather than by argument is that a better `description` fixes this case.**
+- **Correspondence with the official runner is unverified.** The two will not match exactly — they differ in isolation, in how a refused Skill call is counted, in whether a baseline arm runs, and in whether an `llm` grader can be scored at all. Whether they agree on which cases pass is the question. **Verification owner:** anyone with `plugin eval` access, on one run.
+- **Outcome graders are protected against being too broad, not against being too narrow.** [`tests/grader-controls.mjs`](../tests/grader-controls.mjs) pins each pattern from both sides, and its `--self-test` catches a control that has stopped exercising its pattern. Neither catches a pattern that rejects a correct answer phrased in words nobody thought of, which is precisely what happened to `retiring-a-decision-record`. The mitigation is to add every measured phrasing as a sourced positive, which only works after a run has produced it.
+- **The `llm` grader on `claiming-done` has never been scored.** It reports `UNSCORED` offline and needs a judge — a sonnet-tier or larger model that is *not* the agent model, per the runner's guidance on self-preference.
+- **The analysis treats 48 runs as independent** when they are paired by case. A paired test across the 15 cases is the right one and has not been run.
+- **Three runs per case will not support a rate.** An all-green board at n=3 is not evidence of 90%; that needs n ≥ 29.
 
-Two facts run through all four:
-
-- **The model found the planted bug every time** — the cache populated before the backend write is confirmed, in both `put` and `putMany`. Unaided, with a built-in loaded, and with the router in context.
-- **This case's grader asserts that a skill loaded, not that the review was good.** That limitation is listed as an open issue further down this file. It stopped being theoretical here: the outcome the case exists to protect succeeded four times out of four, and the case reported `FAIL` four times out of four.
-
-The repair is therefore an outcome grader — assert the review names the cache-before-confirm defect, whatever route it took — or an explicit decision that this case measures routing only and needs a separate outcome case beside it. **Neither has been done, and neither should be chosen by whichever one turns the board green.**
-
-One more caution, and it is the sharpest one available: the shipped arm returned two different `observed:` lines on consecutive runs of the same case and the same configuration. A single run of this case cannot distinguish *a competitor won* from *nothing was considered*. Every board in this file is a set of single samples, and this is what that costs.
-
-## Status: authored, schema-checked, and now executed once
-
-**The official runner has still never run them.** `claude plugin eval` reports `plugin eval is currently in early access` on this machine. Every number above came from the offline harness instead.
-
-The first draft predicted that field names would need fixing before descriptions did. That prediction was correct, and three defects were repaired against the runner's own schema definition:
-
-- every case was missing the required `schema_version`, which a pre-validation guard rejects outright;
-- every grader spelled `arm: with_only`, where the schema is `enum(["with-only", "both"])`;
-- both near-miss negatives set `max: 0` with no `min`, leaving an unsatisfiable range — a file that would have parsed green and never been satisfiable.
-
-The positive graders now carry no `arm` at all, because a `tool_used: Skill` grader is treated as a plugin-fired indicator on its own. The negatives carry `arm: both`, because an assertion that a skill must *not* load has to be scored in both arms to mean anything.
-
-What remains unverified is correspondence: whether these cases score the same under `claude plugin eval` as under the offline harness. They will not match exactly — the two differ in isolation, in how a refused Skill call is counted, and in whether a baseline arm runs. **Verification owner:** anyone with `plugin eval` access, on one run.
-
-Ten cases were added after the first measurement and have never been run — they are structurally checked (schema, grader bounds, that they assert a shipped skill) but behaviorally unproven, exactly as the first six were before anyone ran them. Also still open: most graders assert only that a skill loaded, not that it helped.
-
-The numbers decide whether a description needs work, not a reading of the description text.
+The numbers decide whether a description needs work, not a reading of the description text — and an outcome grader decides whether the skill behind it was worth loading.
