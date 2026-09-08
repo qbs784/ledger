@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: adapter-bootstrap
+execution:
+  prompt: "I just installed this skill pack in our repo. Set it up so the other skills know our commands."
+  max_turns: 6
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads adapting-to-a-project
+    tool: Skill
+    input_match: adapting-to-a-project
+    min: 1

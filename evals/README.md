@@ -4,16 +4,26 @@ A skill in a plugin has no always-loaded instruction file behind it. Its `descri
 
 These cases measure that. Each pairs a realistic prompt with `tool_used` graders asserting which skill loads, and several assert a **near-miss negative** — a skill that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
 
-The six cases target the boundaries most likely to be confused:
+There is one case per shipped skill — the drift gate fails if a skill has no case asserting it loads, because a description nobody measured is a claim with no evidence behind it. Three cases also carry a **near-miss negative**, on the boundaries most likely to be confused:
 
 | Case | Must load | Must not load |
 |---|---|---|
-| `flake-investigation` | `diagnosing-flakes` | — |
-| `new-fixture-isolation` | `designing-concurrent-tests` | `diagnosing-flakes` |
-| `narrow-check-selection` | `refusing-busywork` | — |
-| `claiming-done` | `what-counts-as-evidence` | — |
+| `adapter-bootstrap` | `adapting-to-a-project` | — |
+| `adding-a-validator` | `proving-the-regression` | — |
 | `change-narration-cleanup` | `trimming-session-vantage` | — |
+| `claiming-done` | `what-counts-as-evidence` | — |
+| `deleting-an-unused-option` | `proving-code-is-dead` | — |
+| `documenting-a-command` | `fact-checking-by-execution` | — |
+| `finding-the-change-set` | `scoping-a-change` | — |
+| `flake-investigation` | `diagnosing-flakes` | — |
+| `force-pushing-after-rebase` | `pushing-safely` | — |
+| `narrow-check-selection` | `refusing-busywork` | — |
+| `new-fixture-isolation` | `designing-concurrent-tests` | `diagnosing-flakes` |
+| `recording-a-ui-demo` | `recording-ui-evidence` | — |
+| `retiring-a-decision-record` | `curating-decision-records` | `proving-code-is-dead` |
+| `reviewing-a-diff` | `reviewing-as-cis-complement` | — |
 | `shorten-a-readme` | `writing-complete-propositions` | `trimming-session-vantage` |
+| `which-skill-applies` | `using-ledger` | — |
 
 Run them from the repository root:
 
@@ -74,6 +84,6 @@ The positive graders now carry no `arm` at all, because a `tool_used: Skill` gra
 
 What remains unverified is correspondence: whether these cases score the same under `claude plugin eval` as under the offline harness. They will not match exactly — the two differ in isolation, in how a refused Skill call is counted, and in whether a baseline arm runs. **Verification owner:** anyone with `plugin eval` access, on one run.
 
-Also still open: ten of the sixteen skills have no case at all, and five of the eight graders assert only that a skill loaded rather than that it helped.
+Ten cases were added after the first measurement and have never been run — they are structurally checked (schema, grader bounds, that they assert a shipped skill) but behaviorally unproven, exactly as the first six were before anyone ran them. Also still open: most graders assert only that a skill loaded, not that it helped.
 
 The numbers decide whether a description needs work, not a reading of the description text.

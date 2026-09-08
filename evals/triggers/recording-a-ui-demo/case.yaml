@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: recording-a-ui-demo
+execution:
+  prompt: "This change alters the settings screen. I want to attach a short animated demo to the pull request showing the new flow."
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads recording-ui-evidence
+    tool: Skill
+    input_match: recording-ui-evidence
+    min: 1

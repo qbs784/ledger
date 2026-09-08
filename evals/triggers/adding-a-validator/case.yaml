@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: adding-a-validator
+execution:
+  prompt: "I added a check that rejects config files missing a version field. It passes on our repo. Anything else I should do before I call it done?"
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads proving-the-regression
+    tool: Skill
+    input_match: proving-the-regression
+    min: 1

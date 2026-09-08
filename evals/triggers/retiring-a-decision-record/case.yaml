@@ -1,0 +1,20 @@
+schema_version: "1.0"
+name: retiring-a-decision-record
+execution:
+  prompt: "Our architecture decision records folder has grown to about sixty files and most are for things we shipped years ago. Which ones should we retire, and how?"
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads curating-decision-records
+    tool: Skill
+    input_match: curating-decision-records
+    min: 1
+  - type: tool_used
+    name: near-miss negative — retiring records is not a code-removal survey
+    tool: Skill
+    input_match: proving-code-is-dead
+    min: 0
+    max: 0
+    arm: both

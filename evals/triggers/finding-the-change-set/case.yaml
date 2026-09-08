@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: finding-the-change-set
+execution:
+  prompt: "What exactly does my branch change compared to what it will merge into? I retargeted it yesterday."
+  max_turns: 6
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads scoping-a-change
+    tool: Skill
+    input_match: scoping-a-change
+    min: 1

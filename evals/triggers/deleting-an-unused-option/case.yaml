@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: deleting-an-unused-option
+execution:
+  prompt: "I think the retryBackoff config option is dead — nobody sets it as far as I can tell. Can we delete it?"
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads proving-code-is-dead
+    tool: Skill
+    input_match: proving-code-is-dead
+    min: 1

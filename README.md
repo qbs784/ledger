@@ -89,7 +89,7 @@ Disciplines are general; the commands that implement them are not. A skill that 
 
 Start with `adapting-to-a-project`. It writes that file — and it runs every command before recording it, because a wrong entry is worse than a missing one: a missing entry makes a skill stop and ask, while a wrong entry makes it run something and believe the result.
 
-This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 17 planted defects; a gate not shown to fail is not a gate.
+This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 18 planted defects; a gate not shown to fail is not a gate.
 
 ## Skills
 

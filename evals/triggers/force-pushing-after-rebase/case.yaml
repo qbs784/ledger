@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: force-pushing-after-rebase
+execution:
+  prompt: "I rebased my branch after review and need to push it. A teammate may have pushed to it since I started."
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads pushing-safely
+    tool: Skill
+    input_match: pushing-safely
+    min: 1

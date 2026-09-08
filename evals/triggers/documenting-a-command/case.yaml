@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: documenting-a-command
+execution:
+  prompt: "Add a Getting Started section to our docs covering how to install the CLI and what the default port is."
+  max_turns: 4
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads fact-checking-by-execution
+    tool: Skill
+    input_match: fact-checking-by-execution
+    min: 1

@@ -1,0 +1,13 @@
+schema_version: "1.0"
+name: reviewing-a-diff
+execution:
+  prompt: "Review the changes on this branch before I ask anyone else to look at them."
+  max_turns: 6
+  allowed_tools: []
+runs: 1
+graders:
+  - type: tool_used
+    name: loads reviewing-as-cis-complement
+    tool: Skill
+    input_match: reviewing-as-cis-complement
+    min: 1

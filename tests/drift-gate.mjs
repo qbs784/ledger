@@ -333,6 +333,7 @@ function checkEvalCases(root, skills) {
   if (!existsSync(dir)) return
   const shipped = new Set(skills.map(skill => skill.dirName))
   const ARM_VALUES = new Set(['with-only', 'both'])
+  const asserted = new Set()
 
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
@@ -360,10 +361,20 @@ function checkEvalCases(root, skills) {
     }
 
     for (const match of text.matchAll(/input_match:\s*(\S+)/g)) {
+      asserted.add(match[1].replace(/['"]/g, ''))
       const named = match[1].replace(/['"]/g, '')
       if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(named) && !shipped.has(named)) {
         fail(file, `asserts on skill ${named}, which is not shipped`)
       }
+    }
+  }
+
+  // A skill nobody measured is a description nobody has evidence for, which is
+  // the claim this pack exists to make checkable. A negative grader asserting a
+  // skill must NOT load does not count as coverage of that skill.
+  for (const skill of skills) {
+    if (!asserted.has(skill.dirName)) {
+      fail(`evals/triggers`, `no case asserts that ${skill.dirName} loads — its description has no evidence behind it`)
     }
   }
 }
@@ -551,6 +562,12 @@ function plantedCases() {
       writeFileSync(skill, frontmatter('demo') + '\nSee references/sample.yml.\n')
       mkdirSync(join(dirname(skill), 'references'), { recursive: true })
       writeFileSync(join(dirname(skill), 'references', 'sample.yml'), 'command: pnpm run test:coverage\n')
+    }],
+    ['a shipped skill with no eval case asserting it', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      const caseDir = join(scratch, 'evals', 'triggers', 'other-case')
+      mkdirSync(caseDir, { recursive: true })
+      writeFileSync(join(caseDir, 'case.yaml'), 'schema_version: "1.0"\nname: other-case\ngraders:\n  - type: tool_used\n    input_match: not-the-demo-skill\n')
     }],
     ['version drift across the three manifests', (skill, scratch) => {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
