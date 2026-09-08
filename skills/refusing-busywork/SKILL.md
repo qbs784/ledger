@@ -7,6 +7,8 @@ description: Use when choosing which checks to run before a commit or push; when
 
 Ceremony is the tax a long-horizon loop pays every single iteration, and it compounds exactly like interest. A full suite run that was never needed costs the same on turn 400 as on turn 4 — except by turn 400 it has been paid 400 times.
 
+This skill owns what not to do. It does not judge what a check proves once you have run it.
+
 Most contributor guides say the opposite of this skill. They tell you to run everything, keep everything, and shorten everything. Each of those is a reflex standing in for a judgment, and the judgment is cheap once you know which one to make.
 
 Read `.ledger.yml` for this project's lanes, hooks, and what CI already owns.

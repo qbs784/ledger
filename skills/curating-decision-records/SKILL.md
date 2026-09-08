@@ -7,6 +7,8 @@ description: Use when adding, auditing, pruning, archiving, restoring, or review
 
 A decision record exists to stop a decision being re-litigated. That makes the active set a working index, not an archive: every record in it is something a future reader is expected to read, so a record that no longer guides anything is not free — it is a tax on finding the ones that do.
 
+This skill owns retention and archival mechanics. It does not judge whether a recorded decision was correct — a record that documents a mistake is still worth keeping if it stops the mistake being remade.
+
 The goal is to reduce the active set **without erasing history that can still guide work.** Judge every record semantically. Read `records.path` and `records.required_sections` from `.ledger.yml`.
 
 ## Check supersession when you add a record

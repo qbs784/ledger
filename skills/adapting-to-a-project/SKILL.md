@@ -7,6 +7,8 @@ description: Use when setting up this pack in a repository for the first time, w
 
 No skill in this pack names a command. Disciplines are general; the commands that implement them are not, and a skill that hardcodes one goes stale the moment the project moves — silently, because nothing checks prose. So every project-varying value lives in one file at the repository root, `.ledger.yml`, and every other skill reads it.
 
+This skill owns the adapter file and nothing else: it records what a project's commands are, never which of them a given change needs.
+
 Your job is to write that file for this repository, and to have run everything you put in it.
 
 ## The one rule

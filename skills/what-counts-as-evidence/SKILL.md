@@ -7,6 +7,8 @@ description: Use when about to state that something works, passes, is covered, i
 
 **A signal is evidence only of what it actually observed.** Everything below is that sentence applied to the signals people habitually over-read.
 
+This skill owns what a signal proves. It does not choose which signals to gather, and it is guidance rather than a checklist — the table below is calibration, not an inventory to work through.
+
 This is the discipline that matters most when the work is done by an agent, because an agent will produce a confident summary either way. The summary is not the evidence. The summary is a claim *about* the evidence, and the two come apart silently.
 
 ## Signals that are not evidence

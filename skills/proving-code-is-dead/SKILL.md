@@ -7,6 +7,8 @@ description: Use when asked to find things to simplify or delete; when removing 
 
 An agent accretes speculative surface fast and evenly: an option nobody sets, an event nobody subscribes to, a validator guarding a boundary that does not exist. Each one looked reasonable when written, and each one now costs a reader's attention forever.
 
+This skill owns the evidence standard for a removal. It does not make product decisions: a candidate with a live production caller is a feature change, and that is somebody's call rather than a cleanup.
+
 Removing it is only safe if "nothing uses this" is **proven** rather than grepped-at. So the standard here is high on purpose: prefer a few well-proven candidates over a pile of thin guesses.
 
 Read `protected_seams`, `source.production`, and `source.non_production` from `.ledger.yml` before you start. The seams list is what stops a confident wrong deletion.
@@ -36,6 +38,8 @@ Classify consumers into three corpora **before** writing anything down:
 - **Ambiguous:** examples and scripts that might be product smoke paths. Inspect the usage before classifying — this corpus is where wrong deletions come from.
 
 Search first, then read. Good searches include the exact symbol, the event name, the package name, the configuration key, the method name **both** as `.name(` and as `name(`, and any wire strings. Then read the call sites, the public interfaces, dynamically constructed names, tests, docs, and any configuration or plugin-loading paths.
+
+[references/consumer-probes.md](references/consumer-probes.md) carries the battery: a probe per referent kind, the invocation rules that decide whether a result means anything, and the consumer families — reflection, string-keyed dispatch, declarative wiring, serialized data, cross-repository callers — that no text search can reach. **A zero-hit search is not evidence until the pattern has matched a known positive.**
 
 Reject or downgrade a candidate when:
 

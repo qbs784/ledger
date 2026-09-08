@@ -7,6 +7,8 @@ description: Use when adding a guard, rule, validator, lint, schema, or check; w
 
 **A check you have not seen fail is not a check.** Coverage says a line ran. Only a failing negative control says the scenario is checked. Everything here follows from that one sentence.
 
+This skill owns whether a check can fail. It does not choose which checks to run for a given change.
+
 This matters most where it is least convenient: a new rule feels done when the valid case passes. But a rule that never rejected anything is indistinguishable from a rule that cannot reject anything, and the two stay indistinguishable until the day it was supposed to save you.
 
 ## The negative control

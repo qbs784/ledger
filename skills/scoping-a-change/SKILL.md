@@ -7,6 +7,8 @@ description: Use when starting work on a change, before reading or reviewing a d
 
 Every later decision — which checks to run, which surfaces to review, what evidence a claim needs — is computed from the change set. Get the change set wrong and every one of those decisions is wrong in a way that looks fine.
 
+This skill owns computing the change set. It does not decide what to run over it, or what a review of it must cover.
+
 **The branch's tracking ref is not the base.** It is wrong for a branch created fresh from a worktree, wrong for a branch whose change request targets another feature branch, and wrong again after anyone merges. Inferring it is the single most common way an agent ends up reviewing the wrong diff and running the wrong checks with total confidence.
 
 ## Resolve the base explicitly

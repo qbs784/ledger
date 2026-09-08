@@ -7,6 +7,8 @@ description: Use before pushing, force-pushing, or marking a change ready for re
 
 Publishing is where a local mistake becomes everyone's. Three things go wrong here, and each has a specific protocol: a rewrite that eats someone else's commit, a claim that something landed when it did not, and a missing signal misread as infrastructure trouble.
 
+This skill owns the mechanics of publishing and of establishing that something landed. It does not select what to run beforehand.
+
 Read `hooks`, `ci`, and `default_branch` from `.ledger.yml`.
 
 ## Protect a history rewrite with a lease

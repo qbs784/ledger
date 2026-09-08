@@ -7,6 +7,8 @@ description: Use when recording a browser or UI interaction demo as a GIF, when 
 
 A demo GIF is an evidence claim: *this is what the software does at this commit.* That makes the recording conditions part of the claim, and it makes splicing, fixtures, and stale builds forms of misreporting rather than shortcuts.
 
+This skill owns the evidence chain from a running application to a published artifact. It does not decide whether a given change owes visual evidence at all — that is a project policy, and this skill is guidance rather than a mandate.
+
 **One storyboard equals one isolated run.** Every published frame comes from the same server, the same state roots, and the same scenario execution. If capture automation fails partway, discard its frames and rerun from fresh roots — never assemble a demo from two runs.
 
 ## Keep recording separate from publication

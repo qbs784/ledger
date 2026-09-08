@@ -7,6 +7,8 @@ description: Use when writing or revising any document, README, comment, or guid
 
 **The only admissible evidence for an operation claim is having run it.**
 
+This skill owns whether a claim is true. It does not own how the claim is worded, how long the page runs, or where it lives.
+
 Documentation states how something behaves now. Every other source — your memory, a neighbouring module's README, the shape of the config file, what the function name implies — is a guess with good posture. Guesses are exactly as likely to be right as the last time the code moved, and nothing tells you when that was.
 
 This procedure is mandatory for every new document, and for every new paragraph that claims an operation, command, default, error, or platform difference.
