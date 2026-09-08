@@ -1,6 +1,6 @@
 ---
 name: reviewing-as-cis-complement
-description: Use when reviewing a change request or a diff, when asked for a code review, or when responding to review feedback on your own change. DO NOT invoke to compute what a change touches — route that to ledger:scoping-a-change. DO NOT invoke to judge what a green check proves — route that to ledger:what-counts-as-evidence.
+description: Use when reviewing a diff or answering review on your own change, to cover what automated checks cannot: both sides of a changed interface, borrowed versus owned state, a cache written before the write is confirmed, callers that bypass a guard, and whether an assertion would fail on the regression it names. DO NOT invoke to compute what a change touches — route that to ledger:scoping-a-change. DO NOT invoke to judge what a green check proves — route that to ledger:what-counts-as-evidence.
 ---
 
 # Reviewing as CI's complement

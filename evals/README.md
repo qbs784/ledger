@@ -100,6 +100,57 @@ Both failures were the harness's and the corpus's, which is the ordinary outcome
 - Every run starts in an empty scratch directory, so a prompt naming a file sent the model globbing for something that did not exist; it asked a clarifying question and never reached a skill decision. Fixed by the `fixture/` mechanism — **not** by rewriting the prompt until it passed, which would be tuning the test to the answer.
 - `max_turns: 3` was too low for a case that has to locate and read a file: the run ended mid-read, before any decision. Raised to 6 for that case only.
 
+## What the injection is worth
+
+Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, one run per case, **in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers all loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases.
+
+| Arm | PASS | PARTIAL | FAIL |
+|---|---|---|---|
+| `--no-router` — descriptions alone | 9 | 1 | 5 |
+| shipped configuration — `hooks/hooks.json` injects the router | 13 | 1 | 1 |
+
+**Four of the five failures were fixed by the injection.** That difference is the entire justification for spending roughly 1,800 tokens of every session on it; without a number here, the hook would be ceremony.
+
+Two things about the baseline are worth stating plainly, because both cut against the pack:
+
+- **Every one of the five baseline failures was `no Skill call`.** Not one was lost to a competitor. With 88 tools available the model simply started working — the first move in the transcript is `ls -la`. So the failure mode these descriptions have is not "a stronger skill won"; it is "no skill was considered at all", which is the failure a description cannot fix, because a description is only read once something is already looking for a skill.
+- **The board is 15 cases, and the baseline run printed 16.** The extra row was `which-skill-applies`, which asserted that the router loads; it was retired when the router took `disable-model-invocation: true`, since a human-only skill can never satisfy it. It passed in that run. Excluding it is what makes the two arms comparable, and it is why the baseline reads 9 rather than 10.
+
+**Read each board as 15 single samples, not as a rate.** A skill that fires half the time shows green half the time here. The 4-of-5 difference is larger than sampling noise can account for in one direction, but a repeat run will not reproduce these boards cell for cell.
+
+### The one case that stayed red
+
+`reviewing-a-diff` has been attempted six times and has never passed. Two of those attempts measured nothing — the setup was broken — and four are real measurements. The sequence matters, because the last two runs corrected a conclusion drawn from the third.
+
+**Two setup defects, found by running it:**
+
+1. **Empty scratch directory** — the prompt named a branch and there was no repository, so the model went looking for a file that did not exist and asked a clarifying question. Fixed by `fixture_git: true`, which builds a real two-commit repo with the change on a `review-me` branch.
+2. **`max_turns: 3`** — the run ended mid-read, before any skill decision. Raised to 6.
+
+**Four measurements, with the fixture in place:**
+
+| # | Router | Description | Observed |
+|---|---|---|---|
+| 1 | shipped, precondition wording | original | `no Skill call` |
+| 2 | shipped, section rewritten | original | `code-review(loaded)` |
+| 3 | shipped, section rewritten | rewritten | `no Skill call` |
+| 4 | `--no-router` | rewritten | `code-review(loaded)` |
+
+Run 1 gave a legible reason: *"No `.ledger.yml` here, so the ledger pack isn't actually adopted in this repo — I'll skip that overhead. It's a small single-file diff, so let me just read it directly."* The router had invited exactly that, by saying "if that file does not exist, start with `adapting-to-a-project`" — which reads as a precondition. So the router gained a section stating outright that a missing adapter does not mean the disciplines do not apply.
+
+Run 3 is the one worth keeping, because it undid that conclusion. With the section in place, the model's *first* command was `ls -la; test -f .ledger.yml && echo HAS_LEDGER_YML || echo NO_LEDGER_YML`. It found no adapter and then loaded nothing at all. **Editing the prose the model had quoted did not change the behaviour; it removed the stated reason for it.** The new section plausibly made things worse: it names `.ledger.yml` three times, raising the file's salience in the very context where the goal was to lower it. That is a mechanism worth naming, not a demonstrated one — a single run cannot separate it from noise.
+
+Run 4 is the cleanest single result here. With the router stripped, so the description is the whole trigger surface, a Claude Code built-in won: `code-review` owns the words "review this diff" outright. Two descriptions, four runs, zero loads of the asserted skill. **What has been ruled out by measurement rather than by argument is that a better `description` fixes this case.**
+
+Two facts run through all four:
+
+- **The model found the planted bug every time** — the cache populated before the backend write is confirmed, in both `put` and `putMany`. Unaided, with a built-in loaded, and with the router in context.
+- **This case's grader asserts that a skill loaded, not that the review was good.** That limitation is listed as an open issue further down this file. It stopped being theoretical here: the outcome the case exists to protect succeeded four times out of four, and the case reported `FAIL` four times out of four.
+
+The repair is therefore an outcome grader — assert the review names the cache-before-confirm defect, whatever route it took — or an explicit decision that this case measures routing only and needs a separate outcome case beside it. **Neither has been done, and neither should be chosen by whichever one turns the board green.**
+
+One more caution, and it is the sharpest one available: the shipped arm returned two different `observed:` lines on consecutive runs of the same case and the same configuration. A single run of this case cannot distinguish *a competitor won* from *nothing was considered*. Every board in this file is a set of single samples, and this is what that costs.
+
 ## Status: authored, schema-checked, and now executed once
 
 **The official runner has still never run them.** `claude plugin eval` reports `plugin eval is currently in early access` on this machine. Every number above came from the offline harness instead.

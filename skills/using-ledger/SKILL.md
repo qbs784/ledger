@@ -79,8 +79,15 @@ If you want the shape rather than the index:
 4. **Long-horizon automation needs a durable record.** A reader 500 turns later must resolve every reference and re-derive every decision. — `curating-decision-records`, `recording-ui-evidence`
 5. **Rot resistance as a build requirement, not a cleanup task.** Pin the absence of dead values so a stale reference fails a check instead of aging quietly. Prove code is dead before deleting it. — `proving-the-regression`, `designing-concurrent-tests`, `diagnosing-flakes`, `reviewing-as-cis-complement`, `pushing-safely`
 
-## Setup
+## The adapter is not an adoption gate
 
-No skill in this pack names a command. Project-varying values — test lanes, CI ownership, hooks, source globs, protected designs — live in `.ledger.yml` at the repository root, and the skills read it.
+No skill in this pack names a command. Project-varying values — test lanes, CI ownership, hooks, source globs, protected designs — live in `.ledger.yml` at the repository root, and the skills that need to *run* something read it.
 
-If that file does not exist, start with `adapting-to-a-project`. If it exists but a value you need is `null` or listed under `unverified`, say so and stop rather than guessing: a wrong command is worse than a missing one, because it runs and produces a result you will believe.
+**A missing `.ledger.yml` does not mean these disciplines do not apply here.** Most of them never touch it: what a signal proves, whether a passage carries its propositions, whether code is provably dead, what a review must cover, whether a guard has been seen to fail — none of that needs to know your test command. Apply them regardless.
+
+Only two things change when the file is absent:
+
+- A skill that needs to execute a specific project command says the value is missing and stops there, rather than guessing. A wrong command is worse than a missing one, because it runs and produces a result you will believe.
+- `adapting-to-a-project` is worth running at some point, so those skills stop being blocked. It is a convenience, not a precondition.
+
+Treating the file's absence as "this pack is not adopted here, skip it" is the one reading to avoid. It was a real observed failure: with this router in context and no adapter present, the discipline was skipped wholesale on exactly that reasoning.

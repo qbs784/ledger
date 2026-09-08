@@ -4,6 +4,7 @@ execution:
   prompt: "Review the changes on this branch before I ask anyone else to look at them."
   max_turns: 6
   allowed_tools: []
+fixture_git: true
 runs: 1
 graders:
   - type: tool_used

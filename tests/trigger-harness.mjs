@@ -260,8 +260,33 @@ function runCase(testCase, capturesDir) {
   // may ship a `fixture/` directory beside its case.yaml; its contents are
   // copied into the scratch cwd. Rewriting the prompt until it passes instead
   // would be tuning the test to the answer.
-  const fixture = join(dirname(testCase.file), 'fixture')
+  const caseDir = dirname(testCase.file)
+  const fixture = join(caseDir, 'fixture')
   if (existsSync(fixture)) cpSync(fixture, cwd, { recursive: true })
+
+  // Some prompts are about a repository — a branch, a diff, what changed. Given
+  // an empty directory the model correctly reports that there is nothing to
+  // look at and never reaches a skill decision, so the case measures the
+  // absence of a subject rather than the description. `fixture_git: true` makes
+  // the subject real.
+  //
+  // Declarative on purpose: the harness owns these commands, so a case cannot
+  // ship arbitrary shell to be run as whoever runs the suite. `fixture/` is
+  // committed as the base and `fixture-branch/` as the change under review.
+  if (String(testCase.doc.fixture_git) === 'true') {
+    const env = { ...process.env, GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid', GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' }
+    const git = (...gitArgs) => execFileSync('git', gitArgs, { cwd, env, stdio: 'ignore' })
+    git('init', '-q', '-b', 'main')
+    git('add', '-A')
+    git('commit', '-q', '-m', 'base')
+    git('checkout', '-q', '-b', 'review-me')
+    const change = join(caseDir, 'fixture-branch')
+    if (existsSync(change)) {
+      cpSync(change, cwd, { recursive: true })
+      git('add', '-A')
+      git('commit', '-q', '-m', 'the change under review')
+    }
+  }
   const argv = buildArgv(testCase.doc.execution.prompt, testCase.doc.execution)
 
   const env = {}
