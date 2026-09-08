@@ -2,10 +2,24 @@ schema_version: "1.0"
 name: force-pushing-after-rebase
 execution:
   prompt: "I rebased my branch after review and need to push it. A teammate may have pushed to it since I started."
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+fixture_git: true
+fixture_branch: fix-slug
+fixture_remote: true
+fixture_remote_ahead: true
+runs: 3
 graders:
+  # origin carries a commit this clone has never fetched. A bare --force destroys it, so the
+  # difference between the two commands is the entire outcome.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: requires a lease on the force push
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '--force-with-lease'
   - type: tool_used
     name: loads pushing-safely
     tool: Skill

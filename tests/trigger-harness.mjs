@@ -28,7 +28,11 @@ const PACK = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CASES_DIR = join(PACK, 'evals', 'triggers')
 const MODEL = process.env.LEDGER_TRIGGER_MODEL ?? 'sonnet'
 const BUDGET_USD = process.env.LEDGER_TRIGGER_BUDGET ?? '0.50'
-const TOOLS = ['Skill', 'Read', 'Glob', 'Grep']
+// The default stage when a case names no tools of its own. It must be wide
+// enough that doing the task is possible, or the measurement degrades into
+// "was loading a skill the only available move" — with read-only tools it very
+// nearly is, and the first boards were taken that way.
+const TOOLS = ['Skill', 'Read', 'Glob', 'Grep', 'Write', 'Edit', 'Bash']
 
 const args = process.argv.slice(2)
 const DRY_RUN = args.includes('--dry-run')
@@ -61,6 +65,9 @@ export function parseCase(text, file) {
   const scalar = raw => {
     const value = raw.trim()
     if (value === '[]') return []
+    // Flow sequence, so a case can name its own tools: [Skill, Read, Edit]
+    const flow = /^\[(.+)\]$/.exec(value)
+    if (flow) return flow[1].split(',').map(item => item.trim().replace(/^['"]|['"]$/g, '')).filter(item => item !== '')
     if (/^-?\d+$/.test(value)) return Number(value)
     if (/^".*"$|^'.*'$/.test(value)) return value.slice(1, -1)
     return value
@@ -183,7 +190,36 @@ function readStream(text) {
   return {
     calls: [...calls.values()],
     unparseable, hooks, init, result, routerInjected,
-    targets: { last_message: lastMessage, trace: traceParts.join('\n') },
+    targets: { last_message: lastMessage, trace: traceParts.join('\n'), files: '' },
+  }
+}
+
+/**
+ * Score a `file_exists` grader against the files the run created.
+ *
+ * The runner's semantics, kept deliberately: this list holds only files that
+ * did not exist before the run, so a case whose right answer is to *edit* an
+ * existing document cannot be graded this way and must not try.
+ */
+export function scoreFileExistsGrader(grader, stream) {
+  if (typeof grader.path !== 'string' || grader.path === '') {
+    return { state: 'MISCONFIGURED', detail: 'file_exists grader has no path' }
+  }
+  const created = stream.created ?? []
+  // A glob limited to what the runner's own vocabulary needs: `*` within a path
+  // segment and `**` across segments.
+  const expression = grader.path
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*\//g, '(?:[^/]+/)*')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*')
+  const pattern = new RegExp(`^${expression}$`)
+  const hits = created.filter(path => pattern.test(path))
+  const wanted = String(grader.exists ?? 'true') !== 'false'
+  const pass = wanted ? hits.length > 0 : hits.length === 0
+  return {
+    state: pass ? 'PASS' : 'FAIL',
+    detail: `${hits.length} of ${created.length} created file(s) match ${grader.path}, expected exists=${wanted}`,
   }
 }
 
@@ -237,6 +273,7 @@ export function scoreRegexGrader(grader, stream) {
 function scoreGrader(grader, stream) {
   const calls = stream.calls
   if (grader.type === 'regex') return scoreRegexGrader(grader, stream)
+  if (grader.type === 'file_exists') return scoreFileExistsGrader(grader, stream)
   if (grader.type !== 'tool_used') {
     return { state: 'UNSCORED', detail: grader.type === 'llm' ? 'no judge available offline' : `grader type ${grader.type} not implemented` }
   }
@@ -282,14 +319,40 @@ function pluginDir() {
   return strippedPack
 }
 
+/**
+ * Every file under `dir`, as paths relative to it, skipping `.git` — a git
+ * fixture writes thousands of objects and none of them is a file the model
+ * created.
+ */
+function listFiles(dir, prefix = '') {
+  const found = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '.git') continue
+    const relativePath = prefix === '' ? entry.name : `${prefix}/${entry.name}`
+    if (entry.isDirectory()) found.push(...listFiles(join(dir, entry.name), relativePath))
+    else found.push(relativePath)
+  }
+  return found
+}
+
 function buildArgv(prompt, execution) {
+  // A case may name its own tools. `allowed_tools: []` is the runner's default
+  // and means "do not restrict", so an empty list falls back to this harness's
+  // default stage rather than to nothing.
+  const requested = Array.isArray(execution.allowed_tools) && execution.allowed_tools.length > 0
+    ? execution.allowed_tools
+    : TOOLS
   const argv = [
     '-p', prompt,
     '--output-format', 'stream-json',
     '--verbose',                       // without it, -p + stream-json emits zero bytes and every negative passes vacuously
-    '--max-turns', String(execution.max_turns ?? 3),
+    // The runner's own default is 10. Anything lower starves the run: a case
+    // that ends at max_turns produces no final answer at all, and an
+    // answer-shaped grader then fails for a reason that has nothing to do with
+    // the skill. Six of fifteen runs ended that way before this was noticed.
+    '--max-turns', String(execution.max_turns ?? 10),
     '--plugin-dir', pluginDir(),
-    '--allowed-tools', ...TOOLS,
+    '--allowed-tools', ...requested,
     '--permission-mode', 'dontAsk',
     '--model', MODEL,
     '--no-session-persistence',
@@ -299,7 +362,7 @@ function buildArgv(prompt, execution) {
     argv.push(
       '--setting-sources', '',      // drops the operator's personal skills, plugins, MCP servers and hooks
       '--strict-mcp-config',
-      '--tools', TOOLS.join(','),   // never "" (removes the Skill tool) and never "Skill" alone (triggering becomes the only move)
+      '--tools', requested.join(','),   // never "" (removes the Skill tool) and never "Skill" alone (triggering becomes the only move)
     )
   }
   // A model id that cannot resolve exercises every preflight and the init event,
@@ -308,7 +371,7 @@ function buildArgv(prompt, execution) {
   return argv
 }
 
-function runCase(testCase, capturesDir) {
+function runCase(testCase, capturesDir, suffix = '') {
   const cwd = mkdtempSync(join(tmpdir(), 'ledger-trigger-'))
 
   // A prompt naming a file needs that file to exist, or the run measures what
@@ -327,23 +390,100 @@ function runCase(testCase, capturesDir) {
   // absence of a subject rather than the description. `fixture_git: true` makes
   // the subject real.
   //
-  // Declarative on purpose: the harness owns these commands, so a case cannot
-  // ship arbitrary shell to be run as whoever runs the suite. `fixture/` is
-  // committed as the base and `fixture-branch/` as the change under review.
+  // Declarative on purpose, and it stays that way. A `fixture.sh` per case would
+  // be far shorter than what follows, and it would mean that cloning this
+  // repository and running the suite executes shell contributed by whoever sent
+  // the last pull request. The harness owns every command here instead, and the
+  // vocabulary grows only when a case genuinely cannot be built without it.
+  //
+  //   fixture/                 committed as `main`
+  //   fixture-branch/          committed as the working branch
+  //   fixture-base-moved/      a later commit on `main`, so the merge base is
+  //                            not main's tip
+  //   fixture-remote-ahead/    a commit pushed to `origin` by someone else and
+  //                            deliberately not fetched
   if (String(testCase.doc.fixture_git) === 'true') {
     const env = { ...process.env, GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid', GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' }
     const git = (...gitArgs) => execFileSync('git', gitArgs, { cwd, env, stdio: 'ignore' })
+    const commitDir = (name, message) => {
+      const source = join(caseDir, name)
+      if (!existsSync(source)) return false
+      cpSync(source, cwd, { recursive: true })
+      git('add', '-A')
+      git('commit', '-q', '-m', message)
+      return true
+    }
+
     git('init', '-q', '-b', 'main')
     git('add', '-A')
     git('commit', '-q', '-m', 'base')
-    git('checkout', '-q', '-b', 'review-me')
-    const change = join(caseDir, 'fixture-branch')
-    if (existsSync(change)) {
-      cpSync(change, cwd, { recursive: true })
-      git('add', '-A')
-      git('commit', '-q', '-m', 'the change under review')
+
+    // A branch whose merge base is not main's tip. Without this, "what does my
+    // branch change compared to what it merges into" has the same answer under
+    // every wrong method, so the case cannot tell a verified base from a guess.
+    const branch = typeof testCase.doc.fixture_branch === 'string' ? testCase.doc.fixture_branch : 'review-me'
+    git('checkout', '-q', '-b', branch)
+    commitDir('fixture-branch', 'the change under review')
+
+    // A second candidate base. "I retargeted it yesterday" means the branch was
+    // cut from one branch and is now meant to merge into another, so the diff
+    // against the wrong base is plausible, non-empty, and wrong — which is the
+    // only state in which a verified base can be told apart from a guessed one.
+    if (typeof testCase.doc.fixture_other_base === 'string') {
+      const other = testCase.doc.fixture_other_base
+      git('checkout', '-q', 'main')
+      git('checkout', '-q', '-b', other)
+      if (!commitDir('fixture-other-base', `work that landed on ${other}`)) {
+        throw new Error(`${testCase.name}: fixture_other_base is set but fixture-other-base/ does not exist`)
+      }
+      git('checkout', '-q', branch)
+    }
+
+    if (String(testCase.doc.fixture_base_moved) === 'true') {
+      git('checkout', '-q', 'main')
+      if (!commitDir('fixture-base-moved', 'main moved on after the branch was cut')) {
+        throw new Error(`${testCase.name}: fixture_base_moved is set but fixture-base-moved/ does not exist`)
+      }
+      git('checkout', '-q', branch)
+    }
+
+    // A real `origin`, so a push is a push and `git log origin/<branch>` says
+    // something. A bare repository in a sibling directory: no network, and
+    // nothing outside the scratch tree is reachable.
+    if (String(testCase.doc.fixture_remote) === 'true') {
+      const remote = `${cwd}-origin.git`
+      execFileSync('git', ['init', '-q', '--bare', '-b', 'main', remote], { env, stdio: 'ignore' })
+      git('remote', 'add', 'origin', remote)
+      git('push', '-q', 'origin', 'main', branch)
+      git('branch', `--set-upstream-to=origin/${branch}`, branch)
+
+      // Someone else pushed to the branch since. This is what makes a force-push
+      // dangerous rather than merely noisy, and it cannot be faked with a flag
+      // that only renames things.
+      if (String(testCase.doc.fixture_remote_ahead) === 'true') {
+        const theirs = `${cwd}-theirs`
+        execFileSync('git', ['clone', '-q', '-b', branch, remote, theirs], { env, stdio: 'ignore' })
+        const source = join(caseDir, 'fixture-remote-ahead')
+        if (!existsSync(source)) {
+          throw new Error(`${testCase.name}: fixture_remote_ahead is set but fixture-remote-ahead/ does not exist`)
+        }
+        cpSync(source, theirs, { recursive: true })
+        execFileSync('git', ['add', '-A'], { cwd: theirs, env, stdio: 'ignore' })
+        execFileSync('git', ['commit', '-q', '-m', "a teammate's commit, pushed while you were rebasing"], { cwd: theirs, env, stdio: 'ignore' })
+        execFileSync('git', ['push', '-q', 'origin', branch], { cwd: theirs, env, stdio: 'ignore' })
+        rmSync(theirs, { recursive: true, force: true })
+        // Deliberately NOT fetched: the local repository still believes it is up
+        // to date, which is the state a person is actually in.
+      }
     }
   }
+  // Which files the run created. The runner's `files` target and `file_exists`
+  // grader both read exactly this list: paths only, and a file that existed
+  // before the run never appears even if the model rewrote it. That asymmetry
+  // is the runner's, not a shortcut here — it is why a case whose right answer
+  // is "edit this document" cannot be graded by file_exists.
+  const before = listFiles(cwd)
+
   const argv = buildArgv(testCase.doc.execution.prompt, testCase.doc.execution)
 
   const env = {}
@@ -368,11 +508,13 @@ function runCase(testCase, capturesDir) {
       // Captures live outside the run cwd: the model globs its working
       // directory, and reading the harness's own transcript would let it answer
       // from the capture instead of from a loaded skill.
-      const streamPath = join(capturesDir, `${testCase.name}.jsonl`)
+      const streamPath = join(capturesDir, `${testCase.name}${suffix}.jsonl`)
       writeFileSync(streamPath, out)
-      if (err.trim() !== '') writeFileSync(join(capturesDir, `${testCase.name}.err`), err)
+      if (err.trim() !== '') writeFileSync(join(capturesDir, `${testCase.name}${suffix}.err`), err)
+      const existing = new Set(before)
+      const created = listFiles(cwd).filter(path => !existing.has(path)).sort()
       if (!KEEP_TEMP) rmSync(cwd, { recursive: true, force: true })
-      resolvePromise({ code, out, err, streamPath, droppedBaseUrl, cwd })
+      resolvePromise({ code, out, err, streamPath, droppedBaseUrl, cwd, created })
     })
   })
 }
@@ -437,56 +579,103 @@ let unscored = false
 const summary = []
 
 for (const testCase of cases) {
-  const outcome = await runCase(testCase, capturesDir)
-  if (outcome.spawnError !== undefined) {
-    console.log(`INVALID   ${testCase.name}: could not spawn claude — ${outcome.spawnError}\n`)
+  // `runs` is the runner's floor of 3, and until now this harness read the field
+  // only to decide whether to print "(n=1)" beside a pass. It never repeated
+  // anything, so every board it produced was a set of single samples wearing a
+  // number that promised otherwise.
+  const runCount = DRY_RUN ? 1 : Math.max(1, Number(testCase.doc.runs ?? 3))
+  const attempts = []
+  let spawnFailure
+
+  for (let index = 0; index < runCount; index += 1) {
+    const suffix = runCount === 1 ? '' : `.run${index + 1}`
+    const outcome = await runCase(testCase, capturesDir, suffix)
+    if (outcome.spawnError !== undefined) { spawnFailure = outcome.spawnError; break }
+    if (outcome.droppedBaseUrl && index === 0) {
+      console.log('  note: ANTHROPIC_BASE_URL was set in this shell and was not passed to the child.')
+    }
+    const stream = readStream(outcome.out)
+    stream.targets.files = (outcome.created ?? []).join('\n')
+    stream.created = outcome.created ?? []
+    attempts.push({ outcome, stream })
+  }
+
+  if (spawnFailure !== undefined) {
+    console.log(`INVALID   ${testCase.name}: could not spawn claude — ${spawnFailure}\n`)
     unscored = true
     summary.push(['INVALID', testCase.name])
     continue
   }
-  if (outcome.droppedBaseUrl) console.log('  note: ANTHROPIC_BASE_URL was set in this shell and was not passed to the child.')
 
-  const stream = readStream(outcome.out)
-  const graderLines = []
-  let caseState = 'PASS'
-
-  if (stream.unparseable > 0) {
-    caseState = 'INVALID'
-    graderLines.push(`  INVALID  ${stream.unparseable} unparseable stream line(s) — a lost assistant line is a lost tool call`)
-  }
-  // Router injection is the shipped configuration, so it is reported rather
-  // than treated as contamination. It is only a defect when a baseline run
-  // asked for the descriptions alone and got the injection anyway.
-  if (NO_ROUTER && stream.routerInjected) {
-    caseState = 'INVALID'
-    graderLines.push('  INVALID  --no-router was requested but the router was injected anyway; this is not a baseline')
-  } else if (stream.hooks > 0) {
-    graderLines.push(`  router    ${stream.routerInjected ? 'injected (shipped configuration)' : 'not injected'} — ${stream.hooks} hook(s) fired`)
-  }
   if (DRY_RUN) {
+    const stream = attempts[0].stream
     const skills = stream.init?.skills?.length ?? 0
     const plugins = (stream.init?.plugins ?? []).map(plugin => plugin.name).join(',') || 'none'
     console.log(`DRY-RUN   ${testCase.name}  init: ${skills} skills visible, plugins=[${plugins}]`)
     continue
   }
 
-  for (const grader of testCase.doc.graders) {
-    const score = scoreGrader(grader, stream)
-    graderLines.push(`  ${score.state.padEnd(13)} ${grader.name ?? grader.type}  ${score.detail}`)
-    if (score.state === 'FAIL' || score.state === 'MISCONFIGURED') { caseState = caseState === 'INVALID' ? 'INVALID' : 'FAIL'; failed = true }
-    if (score.state === 'UNSCORED') { unscored = true; if (caseState === 'PASS') caseState = 'PARTIAL' }
-    if (score.divergent) graderLines.push('                the official runner\'s regex would count this differently')
+  const graderLines = []
+  let caseState = 'PASS'
+
+  const unparseable = attempts.reduce((total, attempt) => total + attempt.stream.unparseable, 0)
+  if (unparseable > 0) {
+    caseState = 'INVALID'
+    graderLines.push(`  INVALID  ${unparseable} unparseable stream line(s) across ${runCount} run(s) — a lost assistant line is a lost tool call`)
+  }
+  const injected = attempts.filter(attempt => attempt.stream.routerInjected).length
+  if (NO_ROUTER && injected > 0) {
+    caseState = 'INVALID'
+    graderLines.push(`  INVALID  --no-router was requested but the router was injected in ${injected} of ${runCount} run(s); this is not a baseline`)
+  } else if (attempts.some(attempt => attempt.stream.hooks > 0)) {
+    graderLines.push(`  router    ${injected > 0 ? `injected (shipped configuration) in ${injected}/${runCount}` : 'not injected'} — ${attempts[0].stream.hooks} hook(s) fired`)
   }
 
-  const observed = stream.calls.length === 0
-    ? 'no Skill call'
-    : stream.calls.map(call => `${call.skill}(${call.loaded === true ? 'loaded' : call.loaded === false ? 'refused' : 'unresolved'})`).join(', ')
-  const suffix = caseState === 'PASS' && (testCase.doc.runs ?? 1) === 1 ? '  (n=1: one sample, not a rate)' : ''
+  for (const grader of testCase.doc.graders) {
+    const scores = attempts.map(attempt => scoreGrader(grader, attempt.stream))
+    const passes = scores.filter(score => score.state === 'PASS').length
+
+    // One state for the grader across every run. A grader that passes some of
+    // the time is PARTIAL and says so — that is the whole reason for running
+    // more than once, and collapsing it to PASS or FAIL would throw away the
+    // only new information the repeats bought.
+    let state
+    if (scores.some(score => score.state === 'MISCONFIGURED')) state = 'MISCONFIGURED'
+    else if (scores.every(score => score.state === 'UNSCORED')) state = 'UNSCORED'
+    else if (passes === runCount) state = 'PASS'
+    else if (passes === 0) state = 'FAIL'
+    else state = 'PARTIAL'
+
+    const detail = state === 'MISCONFIGURED'
+      ? scores.find(score => score.state === 'MISCONFIGURED').detail
+      : state === 'UNSCORED'
+        ? scores[0].detail
+        : `${passes}/${runCount} run(s) passed — ${scores.map(score => score.detail).join(' | ')}`
+    graderLines.push(`  ${state.padEnd(13)} ${grader.name ?? grader.type}  ${detail}`)
+
+    if (state === 'MISCONFIGURED' || state === 'FAIL') { caseState = caseState === 'INVALID' ? 'INVALID' : 'FAIL'; failed = true }
+    else if (state === 'PARTIAL' && caseState === 'PASS') caseState = 'PARTIAL'
+    if (state === 'UNSCORED') { unscored = true; if (caseState === 'PASS') caseState = 'PARTIAL' }
+    if (scores.some(score => score.divergent)) graderLines.push('                the official runner\'s regex would count this differently')
+  }
+
+  const observed = attempts.map((attempt, index) => {
+    const calls = attempt.stream.calls
+    const text = calls.length === 0
+      ? 'no Skill call'
+      : calls.map(call => `${call.skill}(${call.loaded === true ? 'loaded' : call.loaded === false ? 'refused' : 'unresolved'})`).join(', ')
+    return runCount === 1 ? text : `run ${index + 1}: ${text}`
+  }).join('  |  ')
+
+  const cost = attempts.reduce((total, attempt) => total + (attempt.stream.result?.total_cost_usd ?? 0), 0)
+  const turns = attempts.map(attempt => attempt.stream.result?.num_turns ?? '?').join(',')
+  const subtypes = [...new Set(attempts.map(attempt => attempt.stream.result?.subtype ?? '?'))].join(',')
+  const suffix = caseState === 'PASS' && runCount === 1 ? '  (n=1: one sample, not a rate)' : ''
 
   console.log(`${caseState.padEnd(9)} ${testCase.name}${suffix}`)
   graderLines.forEach(line => console.log(line))
   console.log(`  observed: ${observed}`)
-  console.log(`  exit=${outcome.code} subtype=${stream.result?.subtype ?? '?'} turns=${stream.result?.num_turns ?? '?'} cost=$${(stream.result?.total_cost_usd ?? 0).toFixed(4)}  -> ${outcome.streamPath}`)
+  console.log(`  runs=${runCount} subtype=${subtypes} turns=${turns} cost=$${cost.toFixed(4)}  -> ${attempts[0].outcome.streamPath}`)
   console.log('')
   summary.push([caseState, testCase.name])
 }
@@ -497,9 +686,9 @@ if (!DRY_RUN) {
   console.log(Object.entries(tally).map(([state, count]) => `${state}=${count}`).join('  '))
   console.log(`captures: ${capturesDir}`)
   console.log('')
-  console.log('At one run per case an all-green board is one sample per case, not a rate:')
-  console.log('a skill that fires half the time shows green half the time. Claiming 90% or')
-  console.log('better from an all-green result needs n>=29 (0.9^29 = 0.047).')
+  console.log('A grader marked PARTIAL passed some runs and not others. That is the finding,')
+  console.log('not noise to be re-rolled away: at three runs per case an all-green board still')
+  console.log('cannot support a claim of 90% or better, which needs n>=29 (0.9^29 = 0.047).')
 }
 
 process.exit(failed ? 1 : unscored ? 2 : 0)

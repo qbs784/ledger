@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: narrow-check-selection
 execution:
   prompt: "I changed one function in the parser. What should I run before I push?"
-  max_turns: 3
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # One function in the parser changed; CI already owns lint, typecheck, build and
+  # duplication on every push. The narrowest check that would fail is the parser lane.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: names the narrow lane rather than the suite
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'test:parser|parser\.test\.mjs'
   - type: tool_used
     name: loads refusing-busywork
     tool: Skill

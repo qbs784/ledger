@@ -2,10 +2,16 @@ schema_version: "1.0"
 name: adapter-bootstrap
 execution:
   prompt: "I just installed this skill pack in our repo. Set it up so the other skills know our commands."
-  max_turns: 6
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The task is to set the pack up in this repository, and the whole of that is a file that
+  # did not exist before. Nothing about the wording of the answer substitutes for it.
+  - type: file_exists
+    name: writes the adapter file
+    path: .ledger.yml
+    exists: true
   - type: tool_used
     name: loads adapting-to-a-project
     tool: Skill

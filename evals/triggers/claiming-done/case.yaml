@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: claiming-done
 execution:
   prompt: "Coverage is at 100% on the new module and CI is green. Is this feature done?"
-  max_turns: 3
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The fixture's coverage really is 100% and the limiter really does have an unexercised
+  # defect, so 'yes, it is done' is available and wrong.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: refuses coverage and green CI as evidence of done
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(coverage|100%)[\s\S]{0,260}(not (that|whether)|says nothing|doesn.t (prove|mean|tell)|does not (prove|mean|tell))|green[\s\S]{0,200}(says nothing|not evidence|doesn.t (prove|mean))'
   - type: tool_used
     name: loads what-counts-as-evidence
     tool: Skill

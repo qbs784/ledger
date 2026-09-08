@@ -2,10 +2,21 @@ schema_version: "1.0"
 name: retiring-a-decision-record
 execution:
   prompt: "Our architecture decision records folder has grown to about sixty files and most are for things we shipped years ago. Which ones should we retire, and how?"
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # Ten of the sixty are Superseded and ten Deprecated, and some 2019 records are still
+  # load-bearing. Sorting by date and cutting the top is the wrong answer that the prompt
+  # invites.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: refuses age and count as the criterion
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(age|how old|years old|date|sixty|60 files)[\s\S]{0,170}(is not|isn.t|not a|never a)[\s\S]{0,70}(criteri|reason|basis|signal|argument)|(status|superseded|referenc)[a-z]*[\s\S]{0,120}(not (its |the )?(age|date))'
   - type: tool_used
     name: loads curating-decision-records
     tool: Skill

@@ -1,0 +1,8 @@
+{
+  "name": "@acme/cli",
+  "version": "0.4.1",
+  "private": false,
+  "type": "module",
+  "bin": { "acme": "bin/acme.mjs" },
+  "scripts": { "start": "node bin/acme.mjs" }
+}

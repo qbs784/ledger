@@ -2,10 +2,24 @@ schema_version: "1.0"
 name: finding-the-change-set
 execution:
   prompt: "What exactly does my branch change compared to what it will merge into? I retargeted it yesterday."
-  max_turns: 6
+  max_turns: 10
   allowed_tools: []
-runs: 1
+fixture_git: true
+fixture_branch: add-currency
+fixture_other_base: release-1.4
+fixture_base_moved: true
+runs: 3
 graders:
+  # The branch was cut from main and now merges into release-1.4, so the diff against main
+  # is plausible, non-empty and wrong.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: uses the retargeted base rather than main
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'release-1\.4|merge[- ]base'
   - type: tool_used
     name: loads scoping-a-change
     tool: Skill

@@ -1,0 +1,9 @@
+{
+  "name": "acme-config",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check:config": "node scripts/check-version-field.mjs"
+  }
+}

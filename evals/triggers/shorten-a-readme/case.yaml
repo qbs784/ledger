@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: shorten-a-readme
 execution:
   prompt: "Our package README has grown to nine hundred lines and repeats itself in three places. Cut it down."
-  max_turns: 6
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The API and the options are each presented three times over 900 lines. Deleting filler
+  # shortens the file without fixing the reason it grew.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: identifies the repeated presentation rather than only cutting length
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(options?|methods?|api)[\s\S]{0,140}(table|list|section)[\s\S]{0,140}(three|twice|3|repeat|duplicat)|(repeat|duplicat)[a-z]*[\s\S]{0,160}(options?|methods?|api)|one home|single (home|place|source)'
   - type: tool_used
     name: loads writing-complete-propositions
     tool: Skill

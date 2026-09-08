@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: new-fixture-isolation
 execution:
   prompt: "I'm adding a test that boots a local HTTP server and writes to a temp directory. Write the fixture."
-  max_turns: 3
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The fixture already in the repository hardcodes port 8123 and /tmp/acme-upload-test,
+  # which is why the suite cannot run twice at once. Copying that pattern is the failure.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: allocates the port and directory rather than fixing them
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'mkdtemp|\bport 0\b|listen\(0|\bephemeral port'
   - type: tool_used
     name: loads designing-concurrent-tests
     tool: Skill

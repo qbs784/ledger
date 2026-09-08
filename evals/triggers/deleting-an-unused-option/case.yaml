@@ -2,10 +2,21 @@ schema_version: "1.0"
 name: deleting-an-unused-option
 execution:
   prompt: "I think the retryBackoff config option is dead — nobody sets it as far as I can tell. Can we delete it?"
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # retryBackoff is read through the resolved config object, so a call-site grep for the
+  # name finds nothing. An answer that agrees to delete it is wrong, and the user would
+  # notice as a broken retry path.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: finds the indirect reader before agreeing to delete
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'config\.retryBackoff|DELAY\[|retry\.mjs\b[\s\S]{0,140}\b(reads|uses|indexes|selects)\b'
   - type: tool_used
     name: loads proving-code-is-dead
     tool: Skill

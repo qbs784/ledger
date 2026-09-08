@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: flake-investigation
 execution:
   prompt: "The auth integration test passes locally but fails maybe one run in five on CI. Figure out what is going on."
-  max_turns: 3
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The token expires at the end of the window it was issued in, so its remaining life
+  # depends on when it was issued. Naming the symptom, or blaming the port, is not the cause.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: reaches the expiry-window cause
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'WINDOW_MS|180\s*ms|(window|expir[a-z]*)[\s\S]{0,150}(boundary|straddl|depends on (when|where|how)|near the (end|edge)|varies|remaining)'
   - type: tool_used
     name: loads diagnosing-flakes
     tool: Skill

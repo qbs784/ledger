@@ -1,0 +1,4 @@
+# last CI run, job "check"
+file                  | line % | branch % | funcs %
+src/rate-limit.mjs    | 100.00 | 100.00   | 100.00
+all files             | 100.00 | 100.00   | 100.00

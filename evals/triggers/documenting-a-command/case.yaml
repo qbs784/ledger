@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: documenting-a-command
 execution:
   prompt: "Add a Getting Started section to our docs covering how to install the CLI and what the default port is."
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # DEFAULT_PORT is 7420 in src/server.mjs. Any other number in a Getting Started section
+  # is a fabrication a reader will act on.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: states the port the source actually declares
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '\b7420\b'
   - type: tool_used
     name: loads fact-checking-by-execution
     tool: Skill

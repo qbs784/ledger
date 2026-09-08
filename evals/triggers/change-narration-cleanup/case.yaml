@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: change-narration-cleanup
 execution:
   prompt: "Our docs are full of phrases like 'this used to live in the theme file' and 'a later PR wires the worker'. Clean that up."
-  max_turns: 3
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # The defect is that the prose carries the authoring session's viewpoint, not that it is
+  # long. An answer that merely shortens it has not done the job.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: names the narration rather than only tidying prose
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(reads|written|sounds) (like|as)[\s\S]{0,70}(history|changelog|transcript|diary)|(current|present)[- ]state|(history|chronolog|narrat)[a-z]*[\s\S]{0,90}(remov|delet|drop|cut|rewrit)'
   - type: tool_used
     name: loads trimming-session-vantage
     tool: Skill

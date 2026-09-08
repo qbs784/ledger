@@ -1,0 +1,16 @@
+# Cdn Strategy
+
+- Status: Accepted
+- Date: 2024-02-14
+
+## Context
+
+We needed to decide how to handle cdn strategy.
+
+## Decision
+
+Adopt the cdn strategy approach described below.
+
+## Consequences
+
+Revisit if the load profile changes.

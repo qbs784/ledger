@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: reviewing-a-diff
 execution:
   prompt: "Review the changes on this branch before I ask anyone else to look at them."
-  max_turns: 6
+  max_turns: 10
   allowed_tools: []
 fixture_git: true
 runs: 3

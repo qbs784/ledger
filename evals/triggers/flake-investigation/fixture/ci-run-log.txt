@@ -1,0 +1,22 @@
+# job "integration" — last 20 runs on main
+# measured locally at 21/60 failures (35%) on the fixture as committed
+run 4812  pass   58s
+run 4813  pass   59s
+run 4814  FAIL   61s   test/auth-accept.test.mjs  token expired during the request
+run 4815  pass   61s
+run 4816  pass   62s
+run 4817  FAIL   60s   test/auth-accept.test.mjs  token expired during the request
+run 4818  pass   59s
+run 4819  pass   60s
+run 4820  FAIL   59s   test/auth-accept.test.mjs  token expired during the request
+run 4821  pass   62s
+run 4822  pass   58s
+run 4823  FAIL   62s   test/auth-accept.test.mjs  token expired during the request
+run 4824  pass   60s
+run 4825  pass   61s
+run 4826  FAIL   61s   test/auth-accept.test.mjs  token expired during the request
+run 4827  pass   58s
+run 4828  pass   59s
+run 4829  FAIL   60s   test/auth-accept.test.mjs  token expired during the request
+run 4830  pass   61s
+run 4831  pass   62s

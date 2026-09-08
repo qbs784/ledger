@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: recording-a-ui-demo
 execution:
   prompt: "This change alters the settings screen. I want to attach a short animated demo to the pull request showing the new flow."
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # Evidence that is not tied to a specific build cannot be checked later. The fixture
+  # serves the built app on 4173, which is a fact the answer has to have read.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: anchors the recording to a served build or a commit
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '\b4173\b|(commit|sha)[\s\S]{0,110}(record|demo|captur)'
   - type: tool_used
     name: loads recording-ui-evidence
     tool: Skill

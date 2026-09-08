@@ -2,10 +2,20 @@ schema_version: "1.0"
 name: adding-a-validator
 execution:
   prompt: "I added a check that rejects config files missing a version field. It passes on our repo. Anything else I should do before I call it done?"
-  max_turns: 4
+  max_turns: 10
   allowed_tools: []
-runs: 1
+runs: 3
 graders:
+  # A guard that has only ever been seen to pass is not known to guard anything. The user
+  # would notice this breaking as a check that silently accepts everything.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: requires the check to be seen rejecting
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'negative control|(confirm|verify|prove|watch|see)[\s\S]{0,90}(it )?(fails?|rejects?)|(strip|remov|delet|missing)[\s\S]{0,80}version[\s\S]{0,110}(fail|reject)'
   - type: tool_used
     name: loads proving-the-regression
     tool: Skill

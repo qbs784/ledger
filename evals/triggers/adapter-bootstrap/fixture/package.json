@@ -1,0 +1,11 @@
+{
+  "name": "acme-parser",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "lint": "node scripts/lint.mjs",
+    "build": "node scripts/build.mjs"
+  }
+}
