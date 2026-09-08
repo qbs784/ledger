@@ -2,3 +2,8 @@ node_modules/
 evals/**/results/
 .DS_Store
 __pycache__/
+
+# Editor and IDE state. Never committed: an IDE inspection profile carries
+# settings inherited from whatever other projects the author has open.
+.idea/
+.vscode/
