@@ -1,0 +1,88 @@
+# The pack's own rules, applied to the pack.
+#
+# The drift gate is what keeps discipline separate from plumbing, and it only
+# helps if it runs on other people's changes rather than on the author's laptop.
+# The self-test runs first: a gate nobody has watched fail is not a gate, so the
+# run proves the checker can reject before it reports that nothing was rejected.
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  drift-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Prove the gate can fail
+        run: node tests/drift-gate.mjs --self-test
+
+      - name: Drift gate
+        run: node tests/drift-gate.mjs
+
+      - name: Manifests and skills validate
+        # Structural checks that do not need the Claude CLI: every manifest is
+        # parseable, every declared skill path exists, and every skill the tree
+        # holds is declared. `claude plugin validate --strict` covers the same
+        # ground plus frontmatter, but is not available on a runner.
+        run: |
+          node -e '
+            const fs = require("fs")
+            for (const file of [".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", "package.json"]) {
+              JSON.parse(fs.readFileSync(file, "utf8"))
+              console.log("parsed", file)
+            }
+            const manifest = JSON.parse(fs.readFileSync(".claude-plugin/plugin.json", "utf8"))
+            const declared = manifest.skills.map(entry => entry.replace(/^\.\/skills\//, "")).sort()
+            const present = fs.readdirSync("skills", { withFileTypes: true })
+              .filter(entry => entry.isDirectory()).map(entry => entry.name).sort()
+            if (declared.join() !== present.join()) {
+              console.error("declared:", declared.join(" "))
+              console.error("present :", present.join(" "))
+              throw new Error("plugin.json skills[] does not match the skills/ tree")
+            }
+            console.log("skills[] matches the tree:", present.length, "skills")
+          '
+
+      - name: Version agreement across manifests
+        # The version lives in three files. Nothing else notices when they drift,
+        # and a marketplace entry disagreeing with plugin.json installs the wrong
+        # thing without an error.
+        run: |
+          node -e '
+            const fs = require("fs")
+            const read = file => JSON.parse(fs.readFileSync(file, "utf8"))
+            const plugin = read(".claude-plugin/plugin.json").version
+            const market = read(".claude-plugin/marketplace.json").plugins[0].version
+            const pkg = read("package.json").version
+            if (new Set([plugin, market, pkg]).size !== 1) {
+              throw new Error(`version drift — plugin.json ${plugin}, marketplace.json ${market}, package.json ${pkg}`)
+            }
+            console.log("version agrees across all three manifests:", plugin)
+          '
+
+      - name: Shell and Python helpers are syntactically valid
+        run: |
+          bash -n skills/scoping-a-change/scripts/change-scope.sh
+          python3 -m py_compile skills/recording-ui-evidence/scripts/encode_gif.py
+          echo "helpers parse"
+
+      - name: The change-scope helper refuses a missing base
+        # Its whole point is declining to guess a base, so the refusal is the
+        # behavior worth pinning.
+        run: |
+          if bash skills/scoping-a-change/scripts/change-scope.sh >/dev/null 2>&1; then
+            echo "change-scope.sh accepted a missing base" >&2
+            exit 1
+          fi
+          echo "refuses a missing base"
