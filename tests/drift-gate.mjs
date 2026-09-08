@@ -368,6 +368,75 @@ function checkEvalCases(root, skills) {
   }
 }
 
+/**
+ * The version lives in three files. Nothing else notices when they drift, and a
+ * marketplace entry disagreeing with plugin.json installs a version nobody
+ * declared. Lived in CI-only YAML with no negative control until now.
+ */
+function checkVersionAgreement(root) {
+  const read = file => {
+    const path = join(root, file)
+    if (!existsSync(path)) return undefined
+    try {
+      return JSON.parse(readFileSync(path, 'utf8'))
+    } catch {
+      fail(file, 'is not valid JSON')
+      return undefined
+    }
+  }
+  const plugin = read('.claude-plugin/plugin.json')?.version
+  const market = read('.claude-plugin/marketplace.json')?.plugins?.[0]?.version
+  const pkg = read('package.json')?.version
+  const versions = [plugin, market, pkg].filter(version => version !== undefined)
+  if (versions.length > 1 && new Set(versions).size !== 1) {
+    fail('.claude-plugin/plugin.json', `version drift — plugin.json ${plugin}, marketplace.json ${market}, package.json ${pkg}`)
+  }
+}
+
+/**
+ * The README's skills table and the eval corpus table are twenty-two skill
+ * names sitting in prose. The cross-reference check matches only the
+ * `ledger:name` form, so a bare-backtick row naming a deleted skill, or a
+ * shipped skill with no row, was invisible — which is the pack's own headline
+ * failure mode inside its own front page.
+ */
+function checkDocumentedSkillTables(root, skills) {
+  const shipped = new Set(skills.map(skill => skill.dirName))
+  const tables = [
+    ['README.md', /^\|\s*`([a-z0-9-]+)`\s*\|/gm],
+    // Backticks are required: an unquoted cell is prose (a result word, a note),
+    // not a name to resolve.
+    ['evals/README.md', /^\|\s*`([a-z0-9-]+)`\s*\|\s*`([a-z0-9-]+)`\s*\|(?:\s*`([a-z0-9-]+)`\s*\|)?/gm],
+  ]
+
+  for (const [file, pattern] of tables) {
+    const path = join(root, file)
+    if (!existsSync(path)) continue
+    const text = readFileSync(path, 'utf8')
+    const named = new Set()
+    for (const match of text.matchAll(pattern)) {
+      for (const cell of match.slice(1)) {
+        if (cell !== undefined && cell !== '' && cell !== '—') named.add(cell)
+      }
+    }
+    for (const name of named) {
+      // A row's first cell may be an eval case name rather than a skill; only
+      // hold names that look like skills but are not shipped.
+      if (!shipped.has(name) && file === 'README.md') {
+        fail(file, `its skills table names ${name}, which is not a shipped skill`)
+      }
+      if (!shipped.has(name) && file !== 'README.md' && !existsSync(join(root, 'evals', 'triggers', name))) {
+        fail(file, `names ${name}, which is neither a shipped skill nor an eval case`)
+      }
+    }
+    if (file === 'README.md') {
+      for (const name of shipped) {
+        if (!named.has(name)) fail(file, `its skills table omits the shipped skill ${name}`)
+      }
+    }
+  }
+}
+
 function checkManifest(root, skills) {
   const manifestPath = join(root, '.claude-plugin', 'plugin.json')
   if (!existsSync(manifestPath)) {
@@ -429,6 +498,8 @@ function run(root) {
   checkAdapterKeys(root, skills)
   checkRouter(root, skills)
   checkManifest(root, skills)
+  checkVersionAgreement(root)
+  checkDocumentedSkillTables(root, skills)
   checkEvalCases(root, skills)
   checkAdvertisedDefectCount(root, plantedCases().length)
   return { skills, failures: [...failures] }
@@ -480,6 +551,15 @@ function plantedCases() {
       writeFileSync(skill, frontmatter('demo') + '\nSee references/sample.yml.\n')
       mkdirSync(join(dirname(skill), 'references'), { recursive: true })
       writeFileSync(join(dirname(skill), 'references', 'sample.yml'), 'command: pnpm run test:coverage\n')
+    }],
+    ['version drift across the three manifests', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      writeFileSync(join(scratch, 'package.json'), JSON.stringify({ name: 'ledger', version: '9.9.9' }, null, 2))
+      writeFileSync(join(scratch, '.claude-plugin', 'marketplace.json'), JSON.stringify({ name: 'ledger', plugins: [{ name: 'ledger', version: '0.1.0' }] }, null, 2))
+    }],
+    ['README skills table omitting a shipped skill', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      writeFileSync(join(scratch, 'README.md'), '| Skill | When |\n|---|---|\n| `nothing-here` | never |\n')
     }],
     ['router that omits a shipped skill', (skill, scratch) => {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')

@@ -35,6 +35,8 @@ Record only what you observed. Where you cannot execute something — a CI-only 
 
 Copy [references/adapter-template.yml](references/adapter-template.yml) and fill it in. Every key carries a comment saying what reads it and what breaks when it is wrong. Keep unfilled keys present and `null` rather than deleting them — a key that is absent is indistinguishable from a key nobody has considered.
 
+[references/adapter-example.yml](references/adapter-example.yml) is the same file once a real project has been read: it shows a verified value sitting next to a deliberate `null`, and an unverifiable one carrying its reason instead of a guess. Copy the shape, not the values.
+
 ## Report
 
 State, in this order: the values you executed and confirmed; the values left `null` and why; and the questions the user answered. Then name the skills that are now usable and the ones still blocked on a missing value.

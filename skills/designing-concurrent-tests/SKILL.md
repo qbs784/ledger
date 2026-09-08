@@ -9,6 +9,8 @@ Build tests that stay correct under the real execution topology, not only when r
 
 Read `.ledger.yml` for this project's focused-test command and the platforms CI covers. If the adapter is missing, say so and continue on the design questions — they do not depend on it.
 
+The rules below are stated as shapes, because they hold across runners and languages. [references/worked-example.md](references/worked-example.md) carries one fixture from five defects to correct in stages — a port the test picked, a predictable shared path, an environment mutation, sleeps standing in for readiness, and teardown that never awaits — and maps each defect back to the rule it violates. Read it before applying one of these rules for the first time; the restoration case in particular fails in a way no abstract statement conveys.
+
 ## Model the execution topology
 
 Assume these layers can overlap unless the active configuration proves otherwise:

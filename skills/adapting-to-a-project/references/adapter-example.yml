@@ -1,0 +1,94 @@
+# A filled adapter, for shape reference.
+#
+# This is what the template looks like once a real project has been read and its
+# commands actually executed. Two things it shows that the annotated template
+# cannot: what a verified value looks like next to a deliberate `null`, and how
+# an unverifiable value carries its reason instead of a guess.
+#
+# The project here is invented — a mid-size web service with a partly-migrated
+# test suite. Do not copy the values; copy the shape.
+
+default_branch: main   # verified: git symbolic-ref --short HEAD, and the remote HEAD branch
+
+commands:
+  # Verified: run against src/auth/token.test.js, exited 0, collected 12 tests.
+  focused_test: npm test -- {target}
+
+  # Verified: exited 0, collected 431 tests in 94s. Recorded so skills can
+  # recognize it and decline to run it by reflex, not so they run it.
+  full_test: npm test
+
+  # Verified: exited 0. Note it reports the whole tree — this project has no way
+  # to scope coverage to changed paths, which is itself worth knowing, because a
+  # skill that expects scoping will otherwise ask for something impossible here.
+  coverage: npm run coverage
+
+  typecheck: npm run typecheck   # verified: exited 0 on a clean tree
+  lint: npm run lint             # verified: exited 0
+
+  # Deliberately null: this project has no documentation checks. Not an
+  # oversight — recorded so a skill stops and says so rather than inventing one.
+  docs_check: null
+
+  build: npm run build                      # verified: produced dist/, exited 0
+  real_entry_point: node dist/server.js     # verified: booted, answered /health
+
+ci:
+  status: gh pr checks   # verified: the binary is present and the flag is documented
+
+  # Verified: job ids read from .github/workflows/ci.yml. Skills use this to
+  # refuse duplicating CI locally, so a wrong entry costs every future iteration.
+  owned_by_ci:
+    - unit
+    - integration
+    - e2e-chrome
+    - e2e-firefox
+
+  # The browser lanes cannot run on a developer machine here. Recorded so the
+  # flake-diagnosis reproduction ladder stops at the last reachable rung and
+  # says so, rather than substituting a passing run on another platform.
+  platforms:
+    - linux
+    - chrome
+    - firefox
+
+hooks:
+  # Verified: read from .husky/. A skill must never re-run these as ceremony.
+  pre_commit:
+    - lint-staged
+    - prettier (staged)
+  pre_push: []   # verified: no pre-push hook exists
+
+source:
+  # Derived from the build configuration and the published entry points, not
+  # from directory names.
+  production:
+    - src/**
+    - migrations/**
+  # A candidate whose only consumers live here is still a removal candidate.
+  non_production:
+    - test/**
+    - "**/*.test.js"
+    - fixtures/**
+    - docs/**
+    - scripts/dev/**
+
+records:
+  path: docs/decisions        # verified: 41 numbered records
+  required_sections:
+    - "## Decision"
+    - "## Consequences"        # verified: every existing record carries both
+
+# The list that stops a confident wrong deletion. This is the one section that
+# usually has to come from a person — nothing in the repository announces that a
+# design is deliberate.
+protected_seams:
+  - The two payment adapters look like duplication and are not; the legacy one still serves customers on the old contract and cannot be removed until they migrate.
+  - The retry wrapper around the mailer looks redundant next to the queue's own retries; it exists because the provider returns 200 on a rejected recipient.
+  - migrations/ is append-only. An unused migration is not dead code — squashing it would break any environment not yet at that revision.
+
+# Every null above, with the reason. A skill needing one of these stops and says
+# so rather than guessing.
+unverified:
+  - docs_check — the project has no documentation checks to run. Not blocked; genuinely absent.
+  - ci.status — gh is installed and authenticated, but no pull request was open at the time, so the command was never observed producing output. Verification owner: anyone with an open pull request, on one run.

@@ -89,7 +89,7 @@ Disciplines are general; the commands that implement them are not. A skill that 
 
 Start with `adapting-to-a-project`. It writes that file — and it runs every command before recording it, because a wrong entry is worse than a missing one: a missing entry makes a skill stop and ask, while a wrong entry makes it run something and believe the result.
 
-This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 15 planted defects; a gate not shown to fail is not a gate.
+This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 17 planted defects; a gate not shown to fail is not a gate.
 
 ## Skills
 
@@ -114,9 +114,26 @@ This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if 
 
 ### Always-on router
 
-`optional/` ships a `SessionStart` hook that injects the router into every session. It is **inert by default** — an always-on injection is a cost every session pays whether the work needs it or not. Enable it by copying `optional/hooks.json` and `optional/inject-router` into a `hooks/` directory at the plugin root.
+`optional/` ships a `SessionStart` hook that injects the router into every session. It is **inert by default** — an always-on injection is a cost every session pays whether the work needs it or not.
 
-Prefer measuring first: `evals/` holds trigger cases with near-miss negatives, and under-triggering is the failure the hook exists to fix.
+**It is only reliably enable-able on the clone path.** A marketplace install lands in a versioned cache directory that an update replaces, so anything copied into the installed tree is lost on the next update, silently. If you installed from the marketplace and want the router always on, re-install from a clone.
+
+From a clone, add the hook to your own settings rather than editing the plugin tree — your settings survive updates and the plugin tree does not:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      { "matcher": "startup|clear|compact",
+        "hooks": [{ "type": "command", "command": "/absolute/path/to/ledger/optional/inject-router", "shell": "bash" }] }
+    ]
+  }
+}
+```
+
+The hook degrades to silence rather than breaking a session: a missing interpreter, a missing router file, or any read failure exits 0 with no output.
+
+**Prefer measuring first.** `evals/` holds trigger cases with near-miss negatives, and under-triggering is the failure the hook exists to fix — so find out whether you have it before paying for it on every session.
 
 ## 中文简介
 
@@ -131,6 +148,10 @@ Prefer measuring first: `evals/` holds trigger cases with near-miss negatives, a
 它**不**规定开发工作流、**不**替你选架构、**不**生成代码；它管的是代码库及其记录必须能证明什么。
 
 安装见上方 Install。所有项目专属命令都在 `.ledger.yml` 里，skill 正文一个命令都不写 —— 这条由 `tests/drift-gate.mjs` 强制，不只是约定。
+
+## Contributing
+
+Rules are mostly enforced rather than written down: `npm test` runs the drift gate over the whole corpus, and `npm run test:self` plants defects and proves it rejects each one. Both are free and both are what CI runs. [CONTRIBUTING.md](CONTRIBUTING.md) covers the few rules a check cannot state — chiefly that positioning is by claim rather than by contrast, and that a new check ships with a planted defect proving it can fail.
 
 ## Attribution and license
 
