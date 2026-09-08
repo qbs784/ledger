@@ -25,8 +25,19 @@ const ROUTER = 'using-ledger'
  * `claude plugin validate --strict` accepts unknown keys (verified by planting
  * `version:` and `foo:`), so this is ledger's own house standard, kept narrow
  * so a skill stays loadable by any runtime that reads only name + description.
+ *
+ * The two invocation keys are in because both target runtimes honour them and
+ * one skill needs them: a router's description is a summary for a human
+ * browsing commands, not trigger vocabulary for a model, so the model must not
+ * be able to reach it.
  */
-const ALLOWED_KEYS = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'])
+const ALLOWED_KEYS = new Set([
+  'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility',
+  'disable-model-invocation', 'user-invocable',
+])
+
+/** A skill the model cannot invoke, per its own frontmatter. */
+const isModelInvocable = skill => skill.data['disable-model-invocation'] !== 'true'
 
 /**
  * House cap on description length. This is NOT the shipped validator's limit —
@@ -375,7 +386,12 @@ function checkEvalCases(root, skills) {
   // A skill nobody measured is a description nobody has evidence for, which is
   // the claim this pack exists to make checkable. A negative grader asserting a
   // skill must NOT load does not count as coverage of that skill.
+  //
+  // Exempt the skills the model cannot invoke: a trigger case for one could
+  // only ever fail, and requiring an impossible case would make the corpus
+  // dishonest rather than complete.
   for (const skill of skills) {
+    if (!isModelInvocable(skill)) continue
     if (!asserted.has(skill.dirName)) {
       fail(`evals/triggers`, `no case asserts that ${skill.dirName} loads — its description has no evidence behind it`)
     }

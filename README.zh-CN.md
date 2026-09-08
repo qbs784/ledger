@@ -125,26 +125,15 @@ claude --plugin-dir ./ledger
 
 ### 常驻路由
 
-`optional/` 里带了一个 `SessionStart` hook，会把路由注入每个 session。它**默认是惰性的** —— 常驻注入是每个 session 都要付的成本，无论那次工作是否需要它。
+`hooks/hooks.json` 会把路由注入每个 session，而且**默认开启**。这是一次刻意的反转，依据是一次测量而不是偏好。
 
-**它只在 clone 这条路径上可靠地启用得了。** 从 marketplace 安装会落在一个带版本号的缓存目录里，而一次更新会替换掉那个目录，所以任何拷进已安装目录树的东西，都会在下次更新时静默消失。如果你是从 marketplace 装的、又想让路由常驻，请改成从 clone 安装。
+在一个工具集完整的会话里用真实 prompt 跑，这个包的 skill 经常**根本没有加载**——而且那些次里**别的也没有加载**。没有内置 skill 获胜，也没有竞争者获胜。模型直接开始干活了，第一个动作是 `ls -la`。一条从未进入视野的纪律，代价是它本该管住的那次改动，这比每个 session 固定的上下文开销更贵。
 
-从 clone 出发，把 hook 加进**你自己的**设置里，而不是去改插件目录树 —— 你的设置能活过更新，插件目录树不能：
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      { "matcher": "startup|clear|compact",
-        "hooks": [{ "type": "command", "command": "/absolute/path/to/ledger/optional/inject-router", "shell": "bash" }] }
-    ]
-  }
-}
-```
+注入约 7 KB，也就是每次 session 启动约 1,800 token，明确且紧凑。如果你不想做这笔交易：删掉已安装副本里的 `hooks/`，或者把插件 manifest 的 `hooks` 路径指到一个不存在的位置。无论哪种，路由都仍然可以按名字调用。
 
 这个 hook 出问题时退化成沉默，而不是搞坏一个 session：解释器缺失、路由文件缺失、或者任何读取失败，都以 0 退出且不输出任何东西。
 
-**先测量再说。** `evals/` 里放着带近似负例的触发用例，而这个 hook 存在的目的正是修复「触发不足」—— 所以在为它付出每个 session 的成本之前，先弄清楚你到底有没有这个问题。
+**路由是唯一一个模型无法调用的 skill。** 它的 frontmatter 带着 `disable-model-invocation: true`，因为路由的 description 是给**挑选命令的人**看的摘要，不是给模型的触发词——而一个路由去和它本该分派的那 15 个 skill 争抢触发，本身就是自相矛盾的设计。它通过 hook 触达模型，通过名字触达人。
 
 ## 参与贡献
 

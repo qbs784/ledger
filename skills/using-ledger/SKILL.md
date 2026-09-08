@@ -1,6 +1,7 @@
 ---
 name: using-ledger
-description: Use at the start of engineering work in a repository, when deciding what evidence a claim needs, or when unsure which ledger skill applies to the situation at hand. DO NOT invoke when a specific skill's own description already matches the task — load that one directly instead.
+description: The map of this pack — the seven rules, and which discipline to reach for at each stage of a change.
+disable-model-invocation: true
 ---
 
 # Using ledger
@@ -22,6 +23,29 @@ These compress most of the pack. They are worth holding in view even when no ski
 7. **A mechanism's existence is not a reason to use it.** Tools invite the work they are capable of.
 
 And the one that subsumes several of them: **verify the world, not the self-report.** A keyword probe on a worker's own output lets a worker that did nothing pass by claiming success.
+
+## Before you start working
+
+Measured, not assumed: given a realistic prompt in a session with a full tool
+set, this pack's skills often did not load at all — and in every one of those
+runs nothing else loaded either. The model simply began working. The first move
+was `ls -la`.
+
+That is not a neutral outcome. It means the discipline that would have applied
+was never in view, and the work proceeded on whatever the model already
+believed. **The pull toward starting is strongest exactly when a rule would
+have changed what you did.**
+
+| The thought | What is actually true |
+|---|---|
+| "Let me look around first, then decide." | Looking around *is* the work, and it is already governed. `scoping-a-change` exists because the base you infer from a directory listing is wrong for a fresh branch, a stacked branch, and any branch after a merge. |
+| "This one is simple enough to just do." | Simple tasks are where a rule is cheapest to follow and least likely to be followed. The expensive ones get attention on their own. |
+| "I'll check the discipline once I know what I'm dealing with." | By then you have chosen an approach, and the rule now reads as an objection to your own plan rather than as guidance. |
+| "I know this rule already." | Knowing it is not the failure mode. Every rule in the seven above is one a competent engineer already agrees with, and the pack exists because agreement does not survive contact with a deadline. |
+| "No skill obviously matches." | Then the answer is in the table below rather than in your first instinct. If it is genuinely not here, say so — that is a finding about this pack. |
+
+Reaching for the wrong one costs a few seconds. Reaching for none is how a
+change lands with nothing behind it.
 
 ## Where to reach for what
 

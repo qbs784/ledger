@@ -19,7 +19,7 @@ Four things, and they are the reason "load unchanged" is a claim about files rat
 
 1. **The `ledger:<skill>` routing form.** Twenty-seven cross-references inside the skills use it. That namespace exists because the plugin was installed under the name `ledger`; copied loose into a skills directory, the skills load but those references name nothing. They stay readable as prose — a reader can see which sibling is meant — but no tool resolves them.
 2. **The two manifests.** `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` are the plugin and marketplace formats of one runtime. Another would need its own.
-3. **The opt-in `SessionStart` hook** under `optional/`. The hook event, the `hookSpecificOutput.additionalContext` response shape, and `${CLAUDE_PLUGIN_ROOT}` are all one runtime's contract.
+3. **The `SessionStart` hook** under `hooks/`. The hook event, the `hookSpecificOutput.additionalContext` response shape, and `${CLAUDE_PLUGIN_ROOT}` are all one runtime's contract.
 4. **`evals/`.** The case schema, the grader types, and the with/without ablation belong to one runner.
 
 ## What a second runtime would cost

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Inject the router skill into every session as additional context.
 #
-# Opt-in: see the "Always-on router" section of the README. Shipping this at
-# hooks/hooks.json would enable it for everyone, and an always-on injection is a
-# cost every session pays whether or not the work needs it.
+# On by default, which is a deliberate reversal. Measured: given realistic
+# prompts in a session with a full tool set, the pack's skills frequently did
+# not load at all and nothing else loaded either — the model simply began
+# working. An injection nobody asked for costs every session a fixed amount of
+# context; a discipline that never enters view costs the change it would have
+# governed. See the router section of the README for how to turn it off.
 #
 # Degrades to silence rather than breaking a session: no python3, no router
 # file, or any read failure exits 0 with no output.

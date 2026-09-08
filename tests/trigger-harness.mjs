@@ -33,6 +33,12 @@ const TOOLS = ['Skill', 'Read', 'Glob', 'Grep']
 const args = process.argv.slice(2)
 const DRY_RUN = args.includes('--dry-run')
 const KEEP_TEMP = args.includes('--keep-temp')
+// Isolation makes the measurement optimistic: it strips the operator's own
+// skills, plugins and hooks, so nothing competes with the pack. A real session
+// has a populated catalog, and a description that wins on an empty stage may
+// lose to a built-in or a personal skill on a full one. This mode measures that
+// stage instead.
+const REAL_ENV = args.includes('--real-environment')
 const ONLY = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined
 
 /**
@@ -126,6 +132,7 @@ function readStream(text) {
   let hooks = 0
   let init
   let result
+  let routerInjected = false
 
   for (const line of text.split('\n')) {
     if (line.trim() === '') continue
@@ -138,6 +145,7 @@ function readStream(text) {
     }
     if (event.subtype === 'init') init = event
     if (event.subtype === 'hook_started') hooks += 1
+    if (event.subtype === 'hook_response' && /using-ledger/.test(event.output ?? event.stdout ?? '')) routerInjected = true
     if (event.type === 'result') result = event
 
     if (event.type === 'assistant' && Array.isArray(event.message?.content)) {
@@ -155,7 +163,7 @@ function readStream(text) {
       }
     }
   }
-  return { calls: [...calls.values()], unparseable, hooks, init, result }
+  return { calls: [...calls.values()], unparseable, hooks, init, result, routerInjected }
 }
 
 /**
@@ -200,15 +208,19 @@ function buildArgv(prompt, execution) {
     '--verbose',                       // without it, -p + stream-json emits zero bytes and every negative passes vacuously
     '--max-turns', String(execution.max_turns ?? 3),
     '--plugin-dir', PACK,
-    '--setting-sources', '',           // drops the operator's personal skills, plugins, MCP servers and hooks
-    '--strict-mcp-config',
-    '--tools', TOOLS.join(','),        // never "" (removes the Skill tool) and never "Skill" alone (triggering becomes the only move)
     '--allowed-tools', ...TOOLS,
     '--permission-mode', 'dontAsk',
     '--model', MODEL,
     '--no-session-persistence',
     '--max-budget-usd', BUDGET_USD,
   ]
+  if (!REAL_ENV) {
+    argv.push(
+      '--setting-sources', '',      // drops the operator's personal skills, plugins, MCP servers and hooks
+      '--strict-mcp-config',
+      '--tools', TOOLS.join(','),   // never "" (removes the Skill tool) and never "Skill" alone (triggering becomes the only move)
+    )
+  }
   // A model id that cannot resolve exercises every preflight and the init event,
   // then exits before any billable call.
   if (DRY_RUN) argv.push('--model', 'claude-nonexistent-dry-run-probe')
@@ -298,13 +310,14 @@ console.log('='.repeat(72))
 console.log(DRY_RUN
   ? 'DRY RUN — an unresolvable model id; every preflight runs, nothing is billed.'
   : `SPENDS REAL MONEY — ${cases.length} billed run(s), capped at $${BUDGET_USD} each.`)
-console.log(`cli=${cliVersion}  model=${DRY_RUN ? 'dry-run probe' : MODEL}  tools=${TOOLS.join(',')}`)
+console.log(`cli=${cliVersion}  model=${DRY_RUN ? 'dry-run probe' : MODEL}  mode=${REAL_ENV ? 'REAL ENVIRONMENT (operator settings loaded)' : `isolated (tools=${TOOLS.join(',')})`}`)
 console.log('')
-console.log('This is not `claude plugin eval`. It isolates harder (--setting-sources ""),')
-console.log('counts only Skill calls that actually loaded, and runs a single arm — so a')
-console.log('pass shows the skill fired, not that this pack caused it to fire.')
-console.log('Claude Code ships built-in skills that survive every isolation flag and compete')
-console.log('in every run; a miss may be one of those winning rather than a weak description.')
+console.log('This is not `claude plugin eval`. It counts only Skill calls that actually')
+console.log('loaded, and runs a single arm — so a pass shows the skill fired, not that this')
+console.log('pack caused it to fire.')
+console.log(REAL_ENV
+  ? 'REAL-ENVIRONMENT mode: the operator\'s own skills, plugins, hooks and MCP\nservers are all loaded and competing. This is the harder and more useful\nnumber — a miss here may be a personal or built-in skill winning rather than a\nweak description, and the observed list below says which.'
+  : 'Isolated mode: the operator\'s skills, plugins and hooks are stripped, so this\nis the OPTIMISTIC number. Re-run with --real-environment for the stage a\nreader actually has.')
 console.log('='.repeat(72))
 console.log('')
 
@@ -334,8 +347,12 @@ for (const testCase of cases) {
     graderLines.push(`  INVALID  ${stream.unparseable} unparseable stream line(s) — a lost assistant line is a lost tool call`)
   }
   if (stream.hooks > 0) {
-    caseState = 'INVALID'
-    graderLines.push(`  INVALID  ${stream.hooks} hook(s) fired; a hook can inject the router and this would measure the hook`)
+    if (REAL_ENV && !stream.routerInjected) {
+      graderLines.push(`  note      ${stream.hooks} of the operator's hook(s) fired — part of the real environment, and none injected this pack's router`)
+    } else {
+      caseState = 'INVALID'
+      graderLines.push(`  INVALID  ${stream.hooks} hook(s) fired and the router was injected; this would measure the hook, not the description`)
+    }
   }
   if (DRY_RUN) {
     const skills = stream.init?.skills?.length ?? 0

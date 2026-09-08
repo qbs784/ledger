@@ -123,28 +123,17 @@ This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if 
 | `pushing-safely` | pushing, force-pushing, or checking whether it landed |
 | `recording-ui-evidence` | recording a UI demo as visual evidence |
 
-### Always-on router
+### The always-on router
 
-`optional/` ships a `SessionStart` hook that injects the router into every session. It is **inert by default** — an always-on injection is a cost every session pays whether the work needs it or not.
+`hooks/hooks.json` injects the router into every session, and it is **on by default**. That is a deliberate reversal, and the reason is a measurement rather than a preference.
 
-**It is only reliably enable-able on the clone path.** A marketplace install lands in a versioned cache directory that an update replaces, so anything copied into the installed tree is lost on the next update, silently. If you installed from the marketplace and want the router always on, re-install from a clone.
+Run against realistic prompts in a session with a full tool set, this pack's skills frequently did not load at all — and in those runs **nothing else loaded either**. No built-in won, no competing skill won. The model simply began working; the first move was `ls -la`. A discipline that never enters view costs the change it would have governed, which is more than a fixed context cost per session.
 
-From a clone, add the hook to your own settings rather than editing the plugin tree — your settings survive updates and the plugin tree does not:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      { "matcher": "startup|clear|compact",
-        "hooks": [{ "type": "command", "command": "/absolute/path/to/ledger/optional/inject-router", "shell": "bash" }] }
-    ]
-  }
-}
-```
+The injection is about 7 KB, roughly 1,800 tokens on every session start, clear, and compact. If that is not a trade you want, delete `hooks/` from your installed copy or set the plugin's `hooks` manifest path to something that does not exist. The router stays reachable by name either way.
 
 The hook degrades to silence rather than breaking a session: a missing interpreter, a missing router file, or any read failure exits 0 with no output.
 
-**Prefer measuring first.** `evals/` holds trigger cases with near-miss negatives, and under-triggering is the failure the hook exists to fix — so find out whether you have it before paying for it on every session.
+**The router is the one skill the model cannot invoke.** Its frontmatter carries `disable-model-invocation: true`, because a router's description is a summary for a person choosing a command, not trigger vocabulary for a model — and a router competing for triggering against the fifteen skills it exists to dispatch to is a design at odds with itself. It reaches a model through the hook and a human through its name.
 
 ## Contributing
 

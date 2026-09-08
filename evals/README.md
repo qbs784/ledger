@@ -4,7 +4,7 @@ A skill in a plugin has no always-loaded instruction file behind it. Its `descri
 
 These cases measure that. Each pairs a realistic prompt with `tool_used` graders asserting which skill loads, and several assert a **near-miss negative** — a skill that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
 
-There is one case per shipped skill — the drift gate fails if a skill has no case asserting it loads, because a description nobody measured is a claim with no evidence behind it. Three cases also carry a **near-miss negative**, on the boundaries most likely to be confused:
+There is one case per **model-invocable** skill — the drift gate fails if such a skill has no case asserting it loads, because a description nobody measured is a claim with no evidence behind it. The router is exempt and has no case: it carries `disable-model-invocation: true`, so a trigger case for it could only ever fail, and requiring an impossible case would make this corpus dishonest rather than complete. Three cases also carry a **near-miss negative**, on the boundaries most likely to be confused:
 
 | Case | Must load | Must not load |
 |---|---|---|
@@ -23,13 +23,27 @@ There is one case per shipped skill — the drift gate fails if a skill has no c
 | `retiring-a-decision-record` | `curating-decision-records` | `proving-code-is-dead` |
 | `reviewing-a-diff` | `reviewing-as-cis-complement` | — |
 | `shorten-a-readme` | `writing-complete-propositions` | `trimming-session-vantage` |
-| `which-skill-applies` | `using-ledger` | — |
 
 Run them from the repository root:
 
 ```sh
 claude plugin eval . --no-publish
 ```
+
+## Isolated is the optimistic number
+
+The offline harness has two modes, and the difference between them is the interesting part.
+
+```sh
+npm run test:triggers                                   # isolated
+node tests/trigger-harness.mjs --real-environment       # the reader's actual stage
+```
+
+Isolated mode strips the operator's own skills, plugins, hooks and MCP servers, so nothing competes with this pack. That makes the result reproducible and **optimistic**: a description that wins on an empty stage may lose on a full one.
+
+Real-environment mode loads all of it. On the machine these cases were written, that is the difference between 33 skills visible with one plugin and 56 visible with six — twenty-three more skills competing for the same prompt, including built-ins whose territory genuinely overlaps this pack's (`debug` against a flake investigation, `simplify` and `code-review` against a check-selection or review prompt).
+
+A miss in real-environment mode is therefore two different findings wearing one face: a weak description, or a stronger competitor. The `observed:` line in the report distinguishes them, because it names every skill that did load.
 
 The runner adds a no-plugin baseline arm by default and reports the score delta, so a case that would have been answered just as well without the pack shows up as a small delta rather than as a pass.
 

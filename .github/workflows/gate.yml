@@ -66,7 +66,7 @@ jobs:
 
       - name: Every shipped executable parses
         # Swept rather than listed: a named allowlist already missed
-        # optional/inject-router, which runs for every session an opted-in user
+        # hooks/inject-router, which runs on every session start
         # starts — a break there is not one failed skill, it is every session.
         run: |
           set -e
@@ -84,7 +84,7 @@ jobs:
 
       - name: The router hook emits valid JSON
         run: |
-          CLAUDE_PLUGIN_ROOT="$PWD" ./optional/inject-router \
+          CLAUDE_PLUGIN_ROOT="$PWD" ./hooks/inject-router \
             | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
                 const o=JSON.parse(s)
                 const context = o.hookSpecificOutput.additionalContext
