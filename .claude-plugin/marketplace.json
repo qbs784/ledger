@@ -1,4 +1,5 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "ledger",
   "description": "The engineering ledger for agent-authored codebases.",
   "owner": {
@@ -16,7 +17,8 @@
         "name": "qbs784",
         "url": "https://github.com/qbs784"
       },
-      "homepage": "https://github.com/qbs784/ledger"
+      "homepage": "https://github.com/qbs784/ledger",
+      "category": "development"
     }
   ]
 }

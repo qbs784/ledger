@@ -73,11 +73,32 @@ jobs:
             console.log("version agrees across all three manifests:", plugin)
           '
 
-      - name: Shell and Python helpers are syntactically valid
+      - name: Every shipped executable parses
+        # Swept rather than listed: a named allowlist already missed
+        # optional/inject-router, which runs for every session an opted-in user
+        # starts — a break there is not one failed skill, it is every session.
         run: |
-          bash -n skills/scoping-a-change/scripts/change-scope.sh
-          python3 -m py_compile skills/recording-ui-evidence/scripts/encode_gif.py
-          echo "helpers parse"
+          set -e
+          for file in $(git ls-files); do
+            case "$file" in
+              *.sh) bash -n "$file"; echo "  parsed $file" ;;
+              *.py) python3 -m py_compile "$file"; echo "  parsed $file" ;;
+              *)
+                if head -1 "$file" | grep -qE '^#!.*(bash|sh)$'; then
+                  bash -n "$file"; echo "  parsed $file"
+                fi ;;
+            esac
+          done
+
+      - name: The router hook emits valid JSON
+        run: |
+          CLAUDE_PLUGIN_ROOT="$PWD" ./optional/inject-router \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+                const o=JSON.parse(s)
+                const context = o.hookSpecificOutput.additionalContext
+                if (!context.includes("using-ledger")) throw new Error("injected context does not carry the router")
+                console.log("hook emits valid JSON,", context.length, "chars")
+              })'
 
       - name: The change-scope helper refuses a missing base
         # Its whole point is declining to guess a base, so the refusal is the
