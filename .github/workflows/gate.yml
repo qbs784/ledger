@@ -30,6 +30,15 @@ jobs:
       - name: Drift gate
         run: node tests/drift-gate.mjs
 
+      - name: Prove the grader controls can fail
+        # Loosening every outcome pattern to match anything must make every
+        # negative control accept. A control that stays red under that is not
+        # exercising the pattern it claims to pin.
+        run: node tests/grader-controls.mjs --self-test
+
+      - name: Grader controls
+        run: node tests/grader-controls.mjs
+
       - name: change-scope behavior
         run: node tests/change-scope.test.mjs
 

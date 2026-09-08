@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: change-narration-cleanup
 execution:
   prompt: "Our docs are full of phrases like 'this used to live in the theme file' and 'a later PR wires the worker'. Clean that up."
-  max_turns: 10
+  max_turns: 20
   allowed_tools: []
 runs: 3
 graders:

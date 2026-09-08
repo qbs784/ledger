@@ -350,8 +350,15 @@ const CONTROLS = {
     },
   },
   'retiring-a-decision-record': {
-    'refuses age and count as the criterion': {
+    'reads the records rather than sorting them by date': {
       positives: [
+        {
+          label: 'the measured answer that named the dead successor link',
+          source: 'real-environment run, --no-router, 2026-09-08',
+          text: 'The set decomposes into 20 topics x 3 records each. One catch: rate-limiting claims to be '
+            + 'superseded by a record — 2027-03-event-bus-v2 — that was never written, so that link has been '
+            + 'dead since it was added.',
+        },
         {
           label: 'the measured answer — the phrasing this pattern originally missed',
           source: 'real-environment run, shipped configuration, 2026-09-08',

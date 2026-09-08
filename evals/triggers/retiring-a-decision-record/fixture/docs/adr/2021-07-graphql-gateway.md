@@ -1,15 +1,15 @@
-# Monorepo Layout
+# Graphql Gateway
 
 - Status: Proposed
 - Date: 2021-07-14
 
 ## Context
 
-We needed to decide how to handle monorepo layout.
+We needed to decide how to handle graphql gateway.
 
 ## Decision
 
-Adopt the approach recorded here for monorepo layout.
+Adopt the approach recorded here for graphql gateway.
 
 ## Consequences
 

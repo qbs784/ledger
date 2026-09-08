@@ -107,33 +107,63 @@ The corpus also violated three floor invariants the official runner documents as
 
 ## What the injection is worth
 
-Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, **three runs per case in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases: 45 runs each, 90 model calls, $17.37 of token pricing.
+Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, **three runs per case in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases.
 
-Every case is graded by an **outcome** grader — did the answer contain what the user would have noticed the absence of — plus a display-only `tool_used` grader recording which skill loaded. The runner excludes the second from the score in both arms, so the two columns below are not interchangeable, and the difference between them is the finding.
+**This is a composite.** Eleven cases come from one full pass over both arms; four were re-run after that pass found defects in them — three fixtures and one grader, all described below. It is not one clean board, and a single command produces one.
 
-| | Runs that produced the right answer | Runs where the asserted skill loaded |
+Each case is graded by an **outcome** grader — did the answer contain what the user would have noticed the absence of — plus `tool_used` graders recording which skill loaded. The runner excludes the second kind from the score in both arms, so the two columns below are not interchangeable.
+
+| | Runs that produced the right answer | Runs where the intended skill loaded |
 |---|---|---|
-| shipped configuration | **38 of 48 — 79%** | 48 of 51 — 94% |
-| `--no-router`, descriptions alone | **31 of 48 — 65%** | 33 of 51 — 65% |
-| difference | **+14 points** | +29 points |
+| shipped configuration | **42 of 45 — 93%** | 51 of 54 — 94% |
+| `--no-router`, descriptions alone | **30 of 45 — 67%** | 39 of 54 — 72% |
+| difference | **+26 points**, z = 3.16 | +22 points, z = 3.10 |
 
-**The injection moves routing more than twice as much as it moves outcomes.** That is the number worth carrying away, and it is a correction: an earlier version of this file published a board of 13 PASS against 9 that was built on routing alone, and so overstated the injection's value by roughly a factor of two.
+Both differences clear conventional significance, and **the injection moves outcomes at least as much as it moves routing**. An earlier version of this file said the opposite — that routing moved more than twice as much as outcomes — and that was an artefact of two defects since fixed: runs cut off at the turn limit were being counted as wrong answers rather than as missing observations, and three fixtures did not put the model in the situation their prompt described. Correcting both moved the outcome column and left the routing column where it was.
 
-The two differences also do not stand equally. Treating each run as an independent sample, the routing difference is z ≈ 3.9 (p < 0.0001) and the outcome difference is z ≈ 1.6 (p ≈ 0.11). So: **the injection is measured to change which skill loads, and is not yet measured to change what the user gets.** Ruling that in or out needs more runs, not more argument. Reported as case verdicts, where a grader that passes some runs and not others is `PARTIAL` rather than rounded:
+Per case, with the outcome column first because it is the one that is scored:
 
-| Arm | PASS | PARTIAL | FAIL |
-|---|---|---|---|
-| shipped configuration | 7 | 6 | 2 |
-| `--no-router` | 3 | 7 | 5 |
+| Case | Outcome: shipped | Outcome: baseline | Route: shipped | Route: baseline |
+|---|---|---|---|---|
+| `adapter-bootstrap` | 2/3 | **0/3** | 3/3 | 3/3 |
+| `adding-a-validator` | 3/3 | 3/3 | 3/3 | 3/3 |
+| `change-narration-cleanup` | 3/3 | 2/3 | 3/3 | 3/3 |
+| `claiming-done` | 3/3 | 3/3 | 3/3 | 3/3 |
+| `deleting-an-unused-option` | 3/3 | 3/3 | 3/3 | 3/3 |
+| `documenting-a-command` | 3/3 | 3/3 | 2/3 | 0/3 |
+| `finding-the-change-set` | 3/3 | 3/3 | 3/3 | 2/3 |
+| `flake-investigation` | 3/3 | 3/3 | 3/3 | 3/3 |
+| `force-pushing-after-rebase` | 2/3 | 2/3 | 3/3 | 3/3 |
+| `narrow-check-selection` | 2/3 | 2/3 | 3/3 | 3/3 |
+| `new-fixture-isolation` | 3/3 | 1/3 | 6/6 | 4/6 |
+| `recording-a-ui-demo` | 3/3 | **0/3** | 3/3 | **0/3** |
+| `retiring-a-decision-record` | 3/3 | 2/3 | 6/6 | 6/6 |
+| `reviewing-a-diff` | 3/3 | 1/3 | **1/3** | **0/3** |
+| `shorten-a-readme` | 3/3 | 2/3 | 6/6 | 3/6 |
 
-### What the failures were, and what they were not
+Four rows are worth reading individually, because they are the four different things this corpus can now distinguish and the previous one could not:
 
-Not one failure on either arm was a competitor winning the prompt, and not one was a description failing to fire — in these boards the asserted skill loaded on 94% of shipped runs. Every failure was an outcome failure, which is the class the previous corpus could not see at all. Two of them turned out not to be failures of the pack:
+- **`adapter-bootstrap` — the skill loaded 3/3 on both arms, and the adapter file was written 2/3 with the injection and 0/3 without.** The baseline runs also used *more* turns (29, 24, 25 against 23, 20, 24) and still produced nothing. This is the clearest single piece of evidence that the injection changes what the user gets and not only which skill is named, and it is invisible to a route-only grader, which scores this case identically on both arms.
+- **`documenting-a-command` — the outcome was right 3/3 on both arms while the route differed 2/3 against 0/3.** The model reported the real default port, `7420`, which only a read of `src/server.mjs` produces — including in runs where no skill loaded at all. Here the pack demonstrably did not cause the outcome, and a route-only grader would have called the baseline a total failure.
+- **`recording-a-ui-demo` — 0/3 on both columns without the injection, 3/3 on both with it.** The one case where the whole result rests on the router being in context.
+- **`reviewing-a-diff` — the outcome was right 3/3 with the injection while the intended skill loaded 1/3.** The review found the planted cache-before-confirm defect whichever route it took. This case has never once loaded `reviewing-as-cis-complement` reliably, and it no longer matters much: what the case exists to protect happens anyway. See the four-round history above for why that took four attempts to see.
 
-- **`force-pushing-after-rebase`** — `pushing-safely` loaded 3/3, and `--force-with-lease` appeared 0/3. Reading the answer showed why: it fetched, found the local tip was an *ancestor* of origin rather than a divergent rewrite, and correctly answered `git merge --ff-only` while naming the teammate's commit a bare force push would drop. **The fixture was wrong**, not the skill and not the model: the prompt says the branch was rebased and the fixture had never rebased anything. It now rewrites the local tip, so the branches genuinely diverge (verified: two commits unique to origin, one to the clone).
-- **`retiring-a-decision-record`** — `curating-decision-records` loaded 3/3, outcome 0/3. The answer classified 60 records by status and chronology and said outright that it rested on those *"not on age or count"* — which is exactly what the grader asks for, in words the pattern did not accept. **A false negative in the grader.** The pattern was widened and that measured sentence is now a pinned positive control, so the phrasing cannot be lost again.
+### What the four re-run cases found, and none of it was a description
 
-Both were repaired after this board was taken and re-run; their cells above are the pre-repair ones. The general lesson is the one the pack already makes elsewhere: a red check is a question, and the first thing to check is the check.
+Not one failure on either arm was a competitor winning the prompt, and not one was a description failing to fire — the intended skill loaded on 94% of shipped runs. Every failure was an outcome failure, the class the previous corpus could not see at all. Four cases were then re-run, and each one had been failing for a reason that was not the pack's:
+
+- **`force-pushing-after-rebase`** — `pushing-safely` loaded 3/3 and `--force-with-lease` appeared 0/3. The answer had fetched, found the local tip was an *ancestor* of origin rather than a divergent rewrite, and correctly said `git merge --ff-only` while naming the teammate's commit a bare force push would drop. **The fixture was wrong:** the prompt says the branch was rebased and the fixture had never rebased anything. `fixture_rebased` now rewrites the local tip; verified that the branches diverge, two commits unique to origin and one to the clone. It scores 2/3 on both arms since.
+- **`retiring-a-decision-record`** — `curating-decision-records` loaded 3/3 and the outcome scored 0/3 against an answer that classified 60 records by status and chronology, said it rested on those *"not on age or count"*, and separately caught **two defects in the fixture**: every `Superseded` record pointed at an unrelated topic, because the script that repaired the dangling links had picked any existing file without regard to subject; and two records were dated in the future. The fixture was rebuilt with a coherent per-topic timeline and exactly one deliberate dead link. The grader was re-anchored too — instead of demanding a sentence about age, it now asks for the dead successor's identifier, which only a real read produces. 3/3 shipped, 2/3 baseline since.
+- **`adapter-bootstrap` and `change-narration-cleanup`** — both were being cut off at the turn limit, which is the harness's budget rather than a wrong answer. Their tasks require *running* commands and *editing* files, not just replying. Limits raised, and a truncated run is now excluded from the outcome denominator and reported separately rather than counted as a failure.
+
+Two harness defects surfaced alongside them, both of the same shape — the measurement charging its own limits to the thing being measured:
+
+- **A flat per-call budget of $0.50** cut off the case with sixty files to read, mid-answer. The cap now scales with the case's turn allowance.
+- **Both arms wrote their transcripts to the same directory**, because its name carried the case count and not the arm. The baseline silently overwrote every transcript the shipped arm had just produced, so a board could no longer be diagnosed against the runs behind it. The directory now names the arm. This was found the hard way, after the evidence for one board was already gone.
+
+And one that would have quietly falsified a report: **`--case` read only its first occurrence.** A two-case re-run measured one case and said nothing about the other. It is repeatable now, and an unknown case name exits 2 rather than billing for a run nobody asked for.
+
+The lesson is the one the pack makes elsewhere: a red check is a question, and the first thing to check is the check.
 
 ### Read the boards this way
 

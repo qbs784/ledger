@@ -1,7 +1,7 @@
 # Monorepo Layout
 
-- Status: Proposed
-- Date: 2021-07-14
+- Status: Accepted
+- Date: 2023-11-14
 
 ## Context
 
@@ -13,4 +13,4 @@ Adopt the approach recorded here for monorepo layout.
 
 ## Consequences
 
-Never accepted and never rejected. It has sat here since it was filed.
+Kept for the record; the successor above is authoritative.

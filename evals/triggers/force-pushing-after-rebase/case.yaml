@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: force-pushing-after-rebase
 execution:
   prompt: "I rebased my branch after review and need to push it. A teammate may have pushed to it since I started."
-  max_turns: 10
+  max_turns: 20
   allowed_tools: []
 fixture_git: true
 fixture_branch: fix-slug

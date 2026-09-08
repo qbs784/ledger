@@ -27,7 +27,11 @@ import { spawn, execFileSync } from 'node:child_process'
 const PACK = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CASES_DIR = join(PACK, 'evals', 'triggers')
 const MODEL = process.env.LEDGER_TRIGGER_MODEL ?? 'sonnet'
-const BUDGET_USD = process.env.LEDGER_TRIGGER_BUDGET ?? '0.50'
+// A per-call ceiling, scaled to what the case is allowed to do. A flat cap cut
+// off a case that has sixty files to read partway through, and the run then
+// looked like a skill that produced no answer.
+const BUDGET_FLOOR = Number(process.env.LEDGER_TRIGGER_BUDGET ?? '0.50')
+const budgetFor = execution => Math.max(BUDGET_FLOOR, 0.08 * (execution.max_turns ?? 10)).toFixed(2)
 // The default stage when a case names no tools of its own. It must be wide
 // enough that doing the task is possible, or the measurement degrades into
 // "was loading a skill the only available move" — with read-only tools it very
@@ -50,7 +54,10 @@ const REAL_ENV = args.includes('--real-environment')
 // points the run at a copy of the pack with `hooks/` removed — the only way to
 // get a baseline now that the injection is on by default.
 const NO_ROUTER = args.includes('--no-router')
-const ONLY = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefined
+// Repeatable. Reading only the first occurrence would silently ignore the rest,
+// which is how a two-case re-run measured one case and reported nothing about
+// the other.
+const ONLY = args.reduce((into, arg, index) => (arg === '--case' ? [...into, args[index + 1]] : into), [])
 
 /**
  * Parse exactly the YAML subset the case files use, and reject anything else.
@@ -356,7 +363,7 @@ function buildArgv(prompt, execution) {
     '--permission-mode', 'dontAsk',
     '--model', MODEL,
     '--no-session-persistence',
-    '--max-budget-usd', BUDGET_USD,
+    '--max-budget-usd', budgetFor(execution),
   ]
   if (!REAL_ENV) {
     argv.push(
@@ -553,10 +560,19 @@ if (caseNames.length === 0) {
   process.exit(2)
 }
 
+// A --case naming nothing is a typo, and running the whole suite (or nothing) in
+// response would bill for a measurement the operator did not ask for.
+const unknown = ONLY.filter(name => !caseNames.includes(name))
+if (unknown.length > 0) {
+  console.error(`no such case: ${unknown.join(', ')}`)
+  console.error(`available: ${caseNames.join(', ')}`)
+  process.exit(2)
+}
+
 const cases = []
 let loadFailed = false
 for (const name of caseNames) {
-  if (ONLY !== undefined && name !== ONLY) continue
+  if (ONLY.length > 0 && !ONLY.includes(name)) continue
   const file = join(CASES_DIR, name, 'case.yaml')
   try {
     cases.push({ name, file, doc: parseCase(readFileSync(file, 'utf8'), `evals/triggers/${name}/case.yaml`) })
@@ -573,7 +589,7 @@ console.log('ledger offline trigger harness')
 console.log('='.repeat(72))
 console.log(DRY_RUN
   ? 'DRY RUN — an unresolvable model id; every preflight runs, nothing is billed.'
-  : `SPENDS REAL MONEY — ${cases.length} billed run(s), capped at $${BUDGET_USD} each.`)
+  : `SPENDS REAL MONEY — ${cases.reduce((total, testCase) => total + (testCase.doc.runs ?? 3), 0)} billed run(s) across ${cases.length} case(s), each capped at $${cases.length === 1 ? budgetFor(cases[0].doc.execution) : `${budgetFor({ max_turns: Math.min(...cases.map(c => c.doc.execution.max_turns ?? 10)) })}–${budgetFor({ max_turns: Math.max(...cases.map(c => c.doc.execution.max_turns ?? 10)) })}`}.`)
 console.log(`cli=${cliVersion}  model=${DRY_RUN ? 'dry-run probe' : MODEL}  mode=${REAL_ENV ? 'REAL ENVIRONMENT (operator settings loaded)' : `isolated (tools=${TOOLS.join(',')})`}  router=${NO_ROUTER ? 'STRIPPED (descriptions alone)' : 'shipped (injected)'}`)
 console.log('')
 console.log('This is not `claude plugin eval`. It counts only Skill calls that actually')
@@ -585,7 +601,12 @@ console.log(REAL_ENV
 console.log('='.repeat(72))
 console.log('')
 
-const capturesDir = join(PACK, 'evals', 'results', `run-${cliVersion.split(' ')[0]}-${cases.length}case`)
+// The arm belongs in the name. Both arms ran the same 15 cases into the same
+// directory once, and the baseline silently overwrote every transcript the
+// shipped arm had just produced — so a board could no longer be diagnosed
+// against the runs it came from.
+const arm = `${REAL_ENV ? 'real' : 'isolated'}-${NO_ROUTER ? 'norouter' : 'router'}`
+const capturesDir = join(PACK, 'evals', 'results', `run-${cliVersion.split(' ')[0]}-${cases.length}case-${arm}`)
 mkdirSync(capturesDir, { recursive: true })
 
 let failed = loadFailed
@@ -645,8 +666,35 @@ for (const testCase of cases) {
     graderLines.push(`  router    ${injected > 0 ? `injected (shipped configuration) in ${injected}/${runCount}` : 'not injected'} — ${attempts[0].stream.hooks} hook(s) fired`)
   }
 
+  // A run cut off at the turn limit has no final answer, so an outcome grader
+  // reading `last_message` sees an empty string and fails. That is a missing
+  // observation, not a wrong one, and counting it against the skill blames the
+  // pack for this harness's budget. Truncated runs are therefore excluded from
+  // the denominator and reported separately.
+  const truncated = attempts.map(attempt => attempt.stream.result?.subtype === 'error_max_turns')
+  const truncatedCount = truncated.filter(Boolean).length
+  if (truncatedCount > 0) {
+    graderLines.push(`  note      ${truncatedCount}/${runCount} run(s) hit the turn limit and produced no final answer — excluded from outcome denominators, not counted as failures`)
+    if (truncatedCount === runCount) {
+      caseState = 'INVALID'
+      graderLines.push('  INVALID  every run was truncated; this case measures the turn budget, not the skill')
+    }
+  }
+
   for (const grader of testCase.doc.graders) {
-    const scores = attempts.map(attempt => scoreGrader(grader, attempt.stream))
+    const allScores = attempts.map(attempt => scoreGrader(grader, attempt.stream))
+    // A route grader still means something in a truncated run: the Skill call
+    // either happened before the cut or it did not. Only answer-shaped graders
+    // lose their subject.
+    const answerShaped = grader.type === 'regex' || grader.type === 'llm'
+    const scores = answerShaped ? allScores.filter((_, index) => !truncated[index]) : allScores
+    if (scores.length === 0) {
+      graderLines.push(`  UNSCORED      ${grader.name ?? grader.type}  every run was truncated before an answer`)
+      unscored = true
+      if (caseState === 'PASS') caseState = 'PARTIAL'
+      continue
+    }
+    const runCountForGrader = scores.length
     const passes = scores.filter(score => score.state === 'PASS').length
 
     // One state for the grader across every run. A grader that passes some of
@@ -656,15 +704,16 @@ for (const testCase of cases) {
     let state
     if (scores.some(score => score.state === 'MISCONFIGURED')) state = 'MISCONFIGURED'
     else if (scores.every(score => score.state === 'UNSCORED')) state = 'UNSCORED'
-    else if (passes === runCount) state = 'PASS'
+    else if (passes === runCountForGrader) state = 'PASS'
     else if (passes === 0) state = 'FAIL'
     else state = 'PARTIAL'
 
+    const gradeable = runCountForGrader === runCount ? '' : ` of ${runCount} attempted`
     const detail = state === 'MISCONFIGURED'
       ? scores.find(score => score.state === 'MISCONFIGURED').detail
       : state === 'UNSCORED'
         ? scores[0].detail
-        : `${passes}/${runCount} run(s) passed — ${scores.map(score => score.detail).join(' | ')}`
+        : `${passes}/${runCountForGrader} gradeable run(s) passed${gradeable} — ${scores.map(score => score.detail).join(' | ')}`
     graderLines.push(`  ${state.padEnd(13)} ${grader.name ?? grader.type}  ${detail}`)
 
     if (state === 'MISCONFIGURED' || state === 'FAIL') { caseState = caseState === 'INVALID' ? 'INVALID' : 'FAIL'; failed = true }

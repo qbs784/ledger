@@ -1,15 +1,15 @@
-# Monorepo Layout
+# Tracing Vendor
 
 - Status: Proposed
 - Date: 2021-07-14
 
 ## Context
 
-We needed to decide how to handle monorepo layout.
+We needed to decide how to handle tracing vendor.
 
 ## Decision
 
-Adopt the approach recorded here for monorepo layout.
+Adopt the approach recorded here for tracing vendor.
 
 ## Consequences
 

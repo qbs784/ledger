@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: retiring-a-decision-record
 execution:
   prompt: "Our architecture decision records folder has grown to about sixty files and most are for things we shipped years ago. Which ones should we retire, and how?"
-  max_turns: 10
+  max_turns: 30
   allowed_tools: []
 runs: 3
 graders:
@@ -12,11 +12,11 @@ graders:
   #
   # Pinned from both sides in tests/grader-controls.mjs.
   - type: regex
-    name: refuses age and count as the criterion
+    name: reads the records rather than sorting them by date
     target: last_message
     flags: i
     match: contains
-    pattern: '(not|rather than|instead of)\s+(on\s+|by\s+|the\s+|its\s+)?(age|how old|date|count|length|number of files)|(age|how old|years old|date|sixty|60 files)[\s\S]{0,170}(is not|isn.t|not a|never a|not the)[\s\S]{0,70}(criteri|reason|basis|signal|argument)|(status|superseded|referenc)[a-z]*[\s\S]{0,140}(not|rather than|instead of)\s+(on |by |its |the )?(age|date|count)'
+    pattern: '2027-03-event-bus-v2|(link|successor|reference)[\s\S]{0,130}(dead|never (was )?written|does not exist|was not written|missing|broken)|(age|how old|years old|date|sixty|60 files)[\s\S]{0,170}(is not|isn.t|not a|never a|not the)[\s\S]{0,70}(criteri|reason|basis|signal|argument)|(not|rather than|instead of)\s+(on\s+|by\s+|the\s+|its\s+)?(age|how old|date|count)'
   - type: tool_used
     name: loads curating-decision-records
     tool: Skill

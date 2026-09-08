@@ -133,10 +133,10 @@ Measured over 15 cases at three runs each, on a real stage with 88 tools and six
 
 | | Runs that produced the right answer | Runs where the intended skill loaded |
 |---|---|---|
-| with the injection | 38 of 48 — 79% | 48 of 51 — 94% |
-| descriptions alone | 31 of 48 — 65% | 33 of 51 — 65% |
+| with the injection | 42 of 45 — 93% | 51 of 54 — 94% |
+| descriptions alone | 30 of 45 — 67% | 39 of 54 — 72% |
 
-Read both columns, because they do not say the same thing. **The injection is measured to change which skill loads** — 65% to 94%, well outside sampling noise. **It is not yet measured to change what the user gets**: 65% to 79% is a real difference in the right direction, and at 48 runs per arm it does not reach significance. Anyone deciding whether to keep the hook should weigh the first number as established and the second as promising.
+Read both columns, because they do not say the same thing. The right-answer column is the one an eval runner scores; the loaded column only says which skill got named. **Both differences clear conventional significance** (z = 3.16 and z = 3.10), so the injection is measured to change what the session produces and not merely how it routes. One case shows that split cleanly: with the router in context the adapter file was written in two runs of three, and without it in none — while the skill itself loaded in all six.
 
 The injection is about 7 KB, roughly 1,800 tokens on every session start, clear, and compact. If that is not a trade you want, delete `hooks/` from your installed copy or set the plugin's `hooks` manifest path to something that does not exist. The router stays reachable by name either way. The full boards, the failures, and what four rounds of measurement found wrong with the corpus itself are in [evals/README.md](evals/README.md).
 

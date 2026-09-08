@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: adapter-bootstrap
 execution:
   prompt: "I just installed this skill pack in our repo. Set it up so the other skills know our commands."
-  max_turns: 10
+  max_turns: 30
   allowed_tools: []
 runs: 3
 graders:
