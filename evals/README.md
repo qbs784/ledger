@@ -100,6 +100,29 @@ Both failures were the harness's and the corpus's, which is the ordinary outcome
 - Every run starts in an empty scratch directory, so a prompt naming a file sent the model globbing for something that did not exist; it asked a clarifying question and never reached a skill decision. Fixed by the `fixture/` mechanism — **not** by rewriting the prompt until it passed, which would be tuning the test to the answer.
 - `max_turns: 3` was too low for a case that has to locate and read a file: the run ended mid-read, before any decision. Raised to 6 for that case only.
 
+## Retracted: the two boards below do not measure what they claim
+
+**Read this section before the numbers under it.** The boards were published, then invalidated by inspecting the transcripts they came from. They are kept rather than deleted because a retraction that removes the evidence is not a retraction.
+
+Both arms were graded solely by `tool_used: Skill` — did the asserted skill load. Nothing asserted that the model then did the task. Reading the 31 recorded final answers shows what that missed:
+
+| Arm | Produced a real answer to the task | Refused: "this directory is empty" | Produced no final answer at all (`error_max_turns`) |
+|---|---|---|---|
+| shipped configuration | **2 of 15** | 7 | 6 |
+| `--no-router` baseline | 4 of 15 | 10 | 2 |
+
+**Thirteen of the fifteen cases ship no fixture.** Only `reviewing-a-diff` and `shorten-a-readme` have one, so in the other thirteen the model opened an empty scratch directory and had nothing to work on. The `fixture/` mechanism was introduced to fix exactly this after the first measurement, and then applied to two cases while the corpus grew to fifteen.
+
+So the boards recorded whether a skill loaded during runs in which the model was mostly explaining that it could not proceed. A `PASS` there means the description fired. It does not mean the skill helped, and in thirteen cases the run could not have shown help even in principle.
+
+The direction of the error flatters the pack, which is the direction that most needs saying out loud. And one number in it points at a cost rather than a benefit: **the shipped arm ran out of turns three times as often as the baseline** — six against two. The injection adds roughly 1,800 tokens and induces a skill-load round trip, both of which consume the turn budget the case allows. That is a plausible mechanism, not a demonstrated one; what is demonstrated is the correlation and that nobody was watching for it.
+
+**What is therefore not established:** that the injection is worth its cost. The `4 of 5 failures fixed` claim below is measured against a grader the official runner excludes from scoring, in runs that mostly produced nothing.
+
+**What is still established:** every baseline failure was `no Skill call` rather than a competitor win, and the census of 227 real transcripts. Those did not depend on the answers.
+
+The repair in progress, in order of what actually blocks a valid measurement: a fixture for every case, so there is something to do; an outcome grader for every case, so doing it is what gets scored; `runs: 3`; and `max_turns` set from what the fixture actually requires. The gate now fails a case that is graded only by `tool_used` or that sets `runs` below 3.
+
 ## What the injection is worth
 
 Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, one run per case, **in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers all loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases.
@@ -109,7 +132,7 @@ Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, one run per case, **in rea
 | `--no-router` — descriptions alone | 9 | 1 | 5 |
 | shipped configuration — `hooks/hooks.json` injects the router | 13 | 1 | 1 |
 
-**Four of the five failures were fixed by the injection.** That difference is the entire justification for spending roughly 1,800 tokens of every session on it; without a number here, the hook would be ceremony.
+**Four of the five failures were fixed by the injection** — as measured by whether a skill loaded. See the retraction above: that is not the same as the injection being worth its cost, and the transcripts behind these cells show the model mostly produced no answer at all.
 
 Two things about the baseline are worth stating plainly, because both cut against the pack:
 

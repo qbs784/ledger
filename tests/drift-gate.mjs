@@ -374,6 +374,45 @@ function checkEvalCases(root, skills) {
       }
     }
 
+    // Three floor invariants the official runner documents as non-negotiable.
+    // The third is the one that voids a whole board: the runner excludes a
+    // `tool_used: Skill` grader for the plugin under test from the score in both
+    // arms, so a case graded only that way scores nothing at all — it looks
+    // measured and is not. All fifteen cases here were in exactly that state
+    // until it was checked.
+    const graderTypes = [...text.matchAll(/^\s*-\s*type:\s*(\S+)/gm)].map(match => match[1].replace(/['"]/g, ''))
+    if (graderTypes.length === 0) fail(file, 'has no graders')
+    if (!graderTypes.some(type => type !== 'tool_used')) {
+      fail(file, 'is graded only by tool_used, which the runner reports but excludes from the score — the case measures nothing')
+    }
+    const runs = /^runs:\s*(\d+)\s*$/m.exec(text)
+    if (runs === null) fail(file, 'does not set runs')
+    else if (Number(runs[1]) < 3) fail(file, `sets runs: ${runs[1]}; the runner's floor is 3, below which a single sample reads as a rate`)
+
+    // A regex grader is the cheapest outcome check and the quietest to rot: a
+    // pattern loosened while chasing one phrasing becomes always-pass, and the
+    // board goes green. Every one is pinned from both sides.
+    if (graderTypes.includes('regex')) {
+      const controls = join(root, 'tests', 'grader-controls.mjs')
+      // Names must be read per grader block: a `tool_used` grader's name is
+      // not a regex grader's name, and pinning it would demand controls for a
+      // pattern that does not exist.
+      const named = text.split(/^\s*-\s*type:\s*/m).slice(1)
+        .filter(block => /^regex\b/.test(block.trim()))
+        .flatMap(block => [...block.matchAll(/^\s*name:\s*(.+)$/gm)].map(match => match[1].trim().replace(/^['"]|['"]$/g, '')))
+      const controlText = existsSync(controls) ? readFileSync(controls, 'utf8') : ''
+      if (!controlText.includes(`'${entry.name}'`)) {
+        fail(file, `has a regex grader but tests/grader-controls.mjs has no controls for ${entry.name}`)
+      } else {
+        for (const graderName of named) {
+          if (!/[a-z]/.test(graderName)) continue
+          if (!controlText.includes(graderName)) {
+            fail(file, `regex grader ${JSON.stringify(graderName)} has no positive/negative controls in tests/grader-controls.mjs`)
+          }
+        }
+      }
+    }
+
     for (const match of text.matchAll(/input_match:\s*(\S+)/g)) {
       asserted.add(match[1].replace(/['"]/g, ''))
       const named = match[1].replace(/['"]/g, '')

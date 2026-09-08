@@ -5,8 +5,25 @@ execution:
   max_turns: 6
   allowed_tools: []
 fixture_git: true
-runs: 1
+runs: 3
 graders:
+  # Primary, and the only one the official runner scores: did the review tell
+  # the user the thing they would have shipped a bug for not knowing? The
+  # fixture's branch populates the cache before awaiting the backend write, so a
+  # review that misses it has failed at the job regardless of which skill loaded.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs against three real
+  # recorded phrasings and three answers that must be rejected.
+  - type: regex
+    name: review names the cache-before-confirm defect
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'cache[\s\S]{0,240}(before|prior to|ahead of|without waiting)[\s\S]{0,80}(write|backend|persist|confirm|resolv)|(write|backend)[\s\S]{0,120}(fail|reject|throw)[\s\S]{0,160}cache[\s\S]{0,90}(still|retain|hold|keep|stale|poison)'
+  # Display-only. The runner excludes a `tool_used: Skill` grader for the plugin
+  # under test from the score in both arms, so this reports the route and never
+  # moves the delta. It is kept because the route is worth watching: four
+  # measured runs of this case loaded this skill zero times.
   - type: tool_used
     name: loads reviewing-as-cis-complement
     tool: Skill

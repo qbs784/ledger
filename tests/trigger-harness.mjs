@@ -53,7 +53,7 @@ const ONLY = args.includes('--case') ? args[args.indexOf('--case') + 1] : undefi
  * A lenient reader that silently misinterprets a grader is worse than no
  * harness: it would report a verdict against a rule nobody wrote.
  */
-function parseCase(text, file) {
+export function parseCase(text, file) {
   const doc = { graders: [] }
   const lines = text.split('\n')
   let context = null
@@ -140,6 +140,7 @@ function readStream(text) {
   let init
   let result
   let routerInjected = false
+  const traceParts = []
 
   for (const line of text.split('\n')) {
     if (line.trim() === '') continue
@@ -157,8 +158,12 @@ function readStream(text) {
 
     if (event.type === 'assistant' && Array.isArray(event.message?.content)) {
       for (const block of event.message.content) {
-        if (block.type === 'tool_use' && block.name === 'Skill') {
-          calls.set(block.id, { skill: bareSkill(block.input?.skill), raw: block.input, loaded: undefined })
+        if (block.type === 'text' && block.text) traceParts.push(block.text)
+        if (block.type === 'tool_use') {
+          traceParts.push(`${block.name} ${JSON.stringify(block.input ?? {})}`)
+          if (block.name === 'Skill') {
+            calls.set(block.id, { skill: bareSkill(block.input?.skill), raw: block.input, loaded: undefined })
+          }
         }
       }
     }
@@ -170,7 +175,57 @@ function readStream(text) {
       }
     }
   }
-  return { calls: [...calls.values()], unparseable, hooks, init, result, routerInjected }
+  // `last_message` is the runner's default grading target: the assistant's final
+  // answer. `trace` is approximated as every assistant text block plus every
+  // tool call, in order — enough to grade "did it ever look at X", not
+  // byte-identical to whatever the official runner concatenates.
+  const lastMessage = typeof result?.result === 'string' ? result.result : ''
+  return {
+    calls: [...calls.values()],
+    unparseable, hooks, init, result, routerInjected,
+    targets: { last_message: lastMessage, trace: traceParts.join('\n') },
+  }
+}
+
+/**
+ * Score a `regex` grader — the runner's cheapest outcome check, and the reason
+ * this harness can grade an answer at all rather than only a route.
+ *
+ * `match` is the runner's own vocabulary: `contains` (at least one hit),
+ * `not_contains` (none), or `count:N` (exactly N). An unimplemented `target` is
+ * MISCONFIGURED rather than UNSCORED, because a target this harness cannot read
+ * would otherwise let a grader sit in a case file looking scored forever.
+ */
+export function scoreRegexGrader(grader, stream) {
+  if (typeof grader.pattern !== 'string' || grader.pattern === '') {
+    return { state: 'MISCONFIGURED', detail: 'regex grader has no pattern' }
+  }
+  const target = grader.target ?? 'last_message'
+  const haystack = stream.targets[target]
+  if (haystack === undefined) {
+    return { state: 'MISCONFIGURED', detail: `target ${target} is not readable offline (this harness reads last_message and trace)` }
+  }
+  const flags = grader.flags ?? ''
+  let pattern
+  try {
+    pattern = new RegExp(grader.pattern, flags.includes('g') ? flags : `${flags}g`)
+  } catch (error) {
+    return { state: 'MISCONFIGURED', detail: `pattern is not a valid regular expression: ${error.message}` }
+  }
+  const hits = [...haystack.matchAll(pattern)].length
+  const match = grader.match ?? 'contains'
+  const exact = /^count:(\d+)$/.exec(match)
+
+  let pass
+  if (match === 'contains') pass = hits >= 1
+  else if (match === 'not_contains') pass = hits === 0
+  else if (exact) pass = hits === Number(exact[1])
+  else return { state: 'MISCONFIGURED', detail: `match must be contains | not_contains | count:N, not ${match}` }
+
+  return {
+    state: pass ? 'PASS' : 'FAIL',
+    detail: `hits=${hits} in ${target} (${haystack.length} chars), expected ${match}`,
+  }
 }
 
 /**
@@ -179,7 +234,9 @@ function readStream(text) {
  * Excluding a refused call from a `max: 0` negative would green a run in which
  * the model demonstrably reached for the forbidden skill.
  */
-function scoreGrader(grader, calls) {
+function scoreGrader(grader, stream) {
+  const calls = stream.calls
+  if (grader.type === 'regex') return scoreRegexGrader(grader, stream)
   if (grader.type !== 'tool_used') {
     return { state: 'UNSCORED', detail: grader.type === 'llm' ? 'no judge available offline' : `grader type ${grader.type} not implemented` }
   }
@@ -327,7 +384,9 @@ function runCase(testCase, capturesDir) {
 // would otherwise run the whole suite. That is not hypothetical; it happened.
 
 if (import.meta.url !== `file://${process.argv[1]}`) {
-  // Imported rather than executed: expose nothing, do nothing.
+  // Imported rather than executed: run nothing. `parseCase` and
+  // `scoreRegexGrader` are exported on purpose, so tests/grader-controls.mjs
+  // exercises the scorer this harness actually uses rather than a copy of it.
 } else {
 
 const caseNames = existsSync(CASES_DIR)
@@ -412,7 +471,7 @@ for (const testCase of cases) {
   }
 
   for (const grader of testCase.doc.graders) {
-    const score = scoreGrader(grader, stream.calls)
+    const score = scoreGrader(grader, stream)
     graderLines.push(`  ${score.state.padEnd(13)} ${grader.name ?? grader.type}  ${score.detail}`)
     if (score.state === 'FAIL' || score.state === 'MISCONFIGURED') { caseState = caseState === 'INVALID' ? 'INVALID' : 'FAIL'; failed = true }
     if (score.state === 'UNSCORED') { unscored = true; if (caseState === 'PASS') caseState = 'PARTIAL' }
