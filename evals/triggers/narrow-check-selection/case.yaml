@@ -1,3 +1,4 @@
+schema_version: "1.0"
 name: narrow-check-selection
 execution:
   prompt: "I changed one function in the parser. What should I run before I push?"
@@ -10,4 +11,3 @@ graders:
     tool: Skill
     input_match: refusing-busywork
     min: 1
-    arm: with_only

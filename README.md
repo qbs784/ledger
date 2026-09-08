@@ -81,7 +81,7 @@ git clone https://github.com/qbs784/ledger
 claude --plugin-dir ./ledger
 ```
 
-The skills are plain directory bundles with `name` + `description` frontmatter and relative resource paths, so they also load unchanged from a project's `.claude/skills/` or `.agents/skills/`, or from `~/.claude/skills/`.
+The skills are plain directory bundles with `name` + `description` frontmatter and relative resource paths, so the files themselves load unchanged from a project's `.claude/skills/` or `.agents/skills/`, or from `~/.claude/skills/`. The `ledger:<skill>` routing form used inside the skills resolves only under a plugin install; see [docs/runtime-scope.md](docs/runtime-scope.md).
 
 ## The adapter: no skill names a command
 
@@ -89,7 +89,7 @@ Disciplines are general; the commands that implement them are not. A skill that 
 
 Start with `adapting-to-a-project`. It writes that file — and it runs every command before recording it, because a wrong entry is worse than a missing one: a missing entry makes a skill stop and ask, while a wrong entry makes it run something and believe the result.
 
-This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject eight planted defects; a gate not shown to fail is not a gate.
+This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 15 planted defects; a gate not shown to fail is not a gate.
 
 ## Skills
 
@@ -134,4 +134,4 @@ Prefer measuring first: `evals/` holds trigger cases with near-miss negatives, a
 
 ## Attribution and license
 
-MIT. Derived in part from the agent-instruction corpus of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), which is MIT-licensed; see [LICENSE](LICENSE) for both notices.
+MIT. Derived in part from the agent-instruction corpus of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), which is MIT-licensed. The upstream copyright notice is preserved in [NOTICE](NOTICE); this project's own terms are in [LICENSE](LICENSE).

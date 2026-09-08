@@ -34,7 +34,9 @@ jobs:
         # Structural checks that do not need the Claude CLI: every manifest is
         # parseable, every declared skill path exists, and every skill the tree
         # holds is declared. `claude plugin validate --strict` covers the same
-        # ground plus frontmatter, but is not available on a runner.
+        # ground for the manifests. It does NOT enforce the frontmatter rules the
+        # drift gate does — verified by planting an unknown key, angle brackets,
+        # and a 2000-char description, all of which it accepts.
         run: |
           node -e '
             const fs = require("fs")
@@ -81,8 +83,14 @@ jobs:
         # Its whole point is declining to guess a base, so the refusal is the
         # behavior worth pinning.
         run: |
-          if bash skills/scoping-a-change/scripts/change-scope.sh >/dev/null 2>&1; then
-            echo "change-scope.sh accepted a missing base" >&2
+          set +e
+          bash skills/scoping-a-change/scripts/change-scope.sh >/dev/null 2>&1
+          rc=$?
+          set -e
+          # Assert the exact usage exit code: any non-zero would also be
+          # satisfied by the script crashing, which is not the behavior claimed.
+          if [ "$rc" -ne 2 ]; then
+            echo "expected usage exit 2 for a missing base, got $rc" >&2
             exit 1
           fi
-          echo "refuses a missing base"
+          echo "refuses a missing base with exit 2"

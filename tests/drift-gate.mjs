@@ -4,8 +4,10 @@
 // A skill goes stale by naming a value that later moves. Two skills in the
 // upstream corpus died exactly that way while every automated check stayed
 // green, so this gate pins the ABSENCE of the values that must never appear.
-// It also holds the router honest and keeps descriptions inside the limit that
-// actually truncates them.
+// It also holds the router honest and keeps descriptions inside this pack's own
+// length cap. Where a check states a limit, the comment says whose limit it is:
+// several of these are house standards stricter than the shipped tooling, which
+// was established by planting defects and watching the tooling accept them.
 //
 // Run: node tests/drift-gate.mjs
 // Prove it can fail: node tests/drift-gate.mjs --self-test
@@ -18,10 +20,20 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ROUTER = 'using-ledger'
 
-/** Frontmatter keys the shipped skill validator accepts; anything else hard-fails. */
+/**
+ * Frontmatter keys this pack allows. NOT what the shipped validator enforces:
+ * `claude plugin validate --strict` accepts unknown keys (verified by planting
+ * `version:` and `foo:`), so this is ledger's own house standard, kept narrow
+ * so a skill stays loadable by any runtime that reads only name + description.
+ */
 const ALLOWED_KEYS = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'])
 
-/** The catalog truncates a description past this many characters, so anything beyond it is invisible. */
+/**
+ * House cap on description length. This is NOT the shipped validator's limit —
+ * it accepts 2000 characters (verified by planting one). 500 is the tightest
+ * catalog truncation observed in a target runtime's source, so writing under it
+ * keeps a description whole everywhere rather than only where the cap is loose.
+ */
 const DESCRIPTION_MAX = 500
 
 /**
@@ -85,7 +97,12 @@ function parseFrontmatter(text) {
   return { data, body: lines.slice(end + 1).join('\n') }
 }
 
-/** Every markdown file shipped under skills/, plus the README when present. */
+/**
+ * Every shipped text file under skills/, plus the README. Deliberately not just
+ * `.md`: a project referent hidden in a bundled .yml, .sh, or .py example is
+ * exactly as stale-able as one in prose, and was previously never scanned.
+ */
+const TEXT_SUFFIXES = ['.md', '.yml', '.yaml', '.sh', '.py', '.json', '.txt']
 function shippedMarkdown(root) {
   const out = []
   const walk = dir => {
@@ -93,7 +110,7 @@ function shippedMarkdown(root) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name)
       if (entry.isDirectory()) walk(path)
-      else if (entry.name.endsWith('.md')) out.push(path)
+      else if (TEXT_SUFFIXES.some(suffix => entry.name.endsWith(suffix))) out.push(path)
     }
   }
   walk(join(root, 'skills'))
@@ -153,7 +170,7 @@ function checkFrontmatter(root, skills) {
     const { name, description } = skill.data
 
     for (const key of Object.keys(skill.data)) {
-      if (!ALLOWED_KEYS.has(key)) fail(file, `frontmatter key ${JSON.stringify(key)} is rejected by the shipped validator`)
+      if (!ALLOWED_KEYS.has(key)) fail(file, `frontmatter key ${JSON.stringify(key)} is outside this pack's allowed set`)
     }
 
     if (!name) fail(file, 'frontmatter has no name')
@@ -165,8 +182,8 @@ function checkFrontmatter(root, skills) {
 
     if (!description) fail(file, 'frontmatter has no description — it is the entire trigger surface')
     else {
-      if (description.length > DESCRIPTION_MAX) fail(file, `description is ${description.length} chars; anything past ${DESCRIPTION_MAX} is truncated out of the catalog`)
-      if (/[<>]/.test(description)) fail(file, 'description contains < or >, which the shipped validator rejects')
+      if (description.length > DESCRIPTION_MAX) fail(file, `description is ${description.length} chars; this pack caps them at ${DESCRIPTION_MAX} so no catalog truncates them`)
+      if (/[<>]/.test(description)) fail(file, 'description contains < or >, which some packaging tools reject and which reads as markup in a catalog')
     }
   }
 }
@@ -284,6 +301,73 @@ function checkAdapterKeys(root, skills) {
   }
 }
 
+/**
+ * The README states how many defects the self-test plants. That is a machine
+ * value living in prose, which is the exact failure this pack exists to catch —
+ * and it had already drifted once, advertising eight when the suite planted
+ * eleven. Rather than fix the word, read it.
+ */
+function checkAdvertisedDefectCount(root, plantedCount) {
+  const readmePath = join(root, 'README.md')
+  if (!existsSync(readmePath)) return
+  const readme = readFileSync(readmePath, 'utf8')
+  const match = /(\d+)\s+planted defects/.exec(readme)
+  if (match === null) {
+    if (readme.includes('planted defects')) fail('README.md', 'mentions planted defects without a count the gate can check')
+    return
+  }
+  const advertised = Number(match[1])
+  if (advertised !== plantedCount) {
+    fail('README.md', `advertises ${advertised} planted defects; the self-test plants ${plantedCount}`)
+  }
+}
+
+/**
+ * Eval cases are the one part of the tree nothing else reads, and they cannot be
+ * executed here — `plugin eval` is gated. So check what is checkable without the
+ * runner: the fields whose absence or misspelling makes a case silently useless.
+ * Every defect listed here was actually present when the cases were first written.
+ */
+function checkEvalCases(root, skills) {
+  const dir = join(root, 'evals', 'triggers')
+  if (!existsSync(dir)) return
+  const shipped = new Set(skills.map(skill => skill.dirName))
+  const ARM_VALUES = new Set(['with-only', 'both'])
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const casePath = join(dir, entry.name, 'case.yaml')
+    const file = relative(root, casePath)
+    if (!existsSync(casePath)) {
+      fail(`evals/triggers/${entry.name}`, 'has no case.yaml, so the runner ignores it')
+      continue
+    }
+    const text = readFileSync(casePath, 'utf8')
+
+    if (!/^schema_version:/m.test(text)) fail(file, 'has no schema_version; the runner rejects the file before validating it')
+
+    for (const match of text.matchAll(/^\s*arm:\s*(\S+)\s*$/gm)) {
+      const value = match[1].replace(/['"]/g, '')
+      if (!ARM_VALUES.has(value)) fail(file, `arm: ${value} is not one of ${[...ARM_VALUES].join(', ')}`)
+    }
+
+    // A grader with max: 0 and no min leaves an unsatisfiable range, and it
+    // parses green — the worst combination, since it looks like coverage.
+    for (const grader of text.split(/^\s*- type:/m).slice(1)) {
+      if (/^\s*max:\s*0\s*$/m.test(grader) && !/^\s*min:\s*/m.test(grader)) {
+        fail(file, 'a grader sets max: 0 without an explicit min, leaving an unsatisfiable range that still parses')
+      }
+    }
+
+    for (const match of text.matchAll(/input_match:\s*(\S+)/g)) {
+      const named = match[1].replace(/['"]/g, '')
+      if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(named) && !shipped.has(named)) {
+        fail(file, `asserts on skill ${named}, which is not shipped`)
+      }
+    }
+  }
+}
+
 function checkManifest(root, skills) {
   const manifestPath = join(root, '.claude-plugin', 'plugin.json')
   if (!existsSync(manifestPath)) {
@@ -345,6 +429,8 @@ function run(root) {
   checkAdapterKeys(root, skills)
   checkRouter(root, skills)
   checkManifest(root, skills)
+  checkEvalCases(root, skills)
+  checkAdvertisedDefectCount(root, plantedCases().length)
   return { skills, failures: [...failures] }
 }
 
@@ -352,8 +438,8 @@ function run(root) {
  * A gate not shown to fail is not a gate. Each case plants exactly one defect
  * in a scratch copy and asserts the gate rejects it.
  */
-function selfTest() {
-  const cases = [
+function plantedCases() {
+  return [
     ['project referent in prose', skill => writeFileSync(skill, frontmatter('demo') + '\nRun `pnpm run test:coverage` first.\n')],
     ['outside pack named', skill => writeFileSync(skill, frontmatter('demo') + '\nUnlike superpowers, this pack is different.\n')],
     ['over-long description', skill => writeFileSync(skill, frontmatter('demo', 'x'.repeat(DESCRIPTION_MAX + 1)) + '\nBody.\n')],
@@ -374,13 +460,37 @@ function selfTest() {
       writeFileSync(join(templateDir, 'adapter-template.yml'), 'default_branch: null\ncommands:\n  focused_test: null\n')
       writeFileSync(join(scratch, 'skills', 'adapting-to-a-project', 'SKILL.md'), frontmatter('adapting-to-a-project') + '\nSee references/adapter-template.yml.\n')
     }],
+    ['README advertising the wrong defect count', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      writeFileSync(join(scratch, 'README.md'), 'Run the self-test to watch it reject 999 planted defects.\n')
+    }],
+    ['eval case missing schema_version', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      const caseDir = join(scratch, 'evals', 'triggers', 'demo-case')
+      mkdirSync(caseDir, { recursive: true })
+      writeFileSync(join(caseDir, 'case.yaml'), 'name: demo-case\ngraders: []\n')
+    }],
+    ['eval grader with an illegal arm value', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      const caseDir = join(scratch, 'evals', 'triggers', 'demo-case')
+      mkdirSync(caseDir, { recursive: true })
+      writeFileSync(join(caseDir, 'case.yaml'), 'schema_version: "1.0"\nname: demo-case\ngraders:\n  - type: tool_used\n    arm: with_only\n')
+    }],
+    ['project referent hidden in a bundled yaml example', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nSee references/sample.yml.\n')
+      mkdirSync(join(dirname(skill), 'references'), { recursive: true })
+      writeFileSync(join(dirname(skill), 'references', 'sample.yml'), 'command: pnpm run test:coverage\n')
+    }],
     ['router that omits a shipped skill', (skill, scratch) => {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
       mkdirSync(join(scratch, 'skills', ROUTER), { recursive: true })
       writeFileSync(join(scratch, 'skills', ROUTER, 'SKILL.md'), frontmatter(ROUTER) + '\nThis router names nothing at all.\n')
     }],
   ]
+}
 
+function selfTest() {
+  const cases = plantedCases()
   let passed = 0
   for (const [label, plant] of cases) {
     const scratch = mkdtempSync(join(tmpdir(), 'ledger-drift-'))

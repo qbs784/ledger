@@ -1,3 +1,4 @@
+schema_version: "1.0"
 name: claiming-done
 execution:
   prompt: "Coverage is at 100% on the new module and CI is green. Is this feature done?"
@@ -10,7 +11,6 @@ graders:
     tool: Skill
     input_match: what-counts-as-evidence
     min: 1
-    arm: with_only
   - type: llm
     name: refuses to treat coverage as correctness
     criteria: |

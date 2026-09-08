@@ -1,3 +1,4 @@
+schema_version: "1.0"
 name: new-fixture-isolation
 execution:
   prompt: "I'm adding a test that boots a local HTTP server and writes to a temp directory. Write the fixture."
@@ -10,10 +11,10 @@ graders:
     tool: Skill
     input_match: designing-concurrent-tests
     min: 1
-    arm: with_only
   - type: tool_used
     name: does not mistake this for a flake investigation
     tool: Skill
     input_match: diagnosing-flakes
+    min: 0
     max: 0
-    arm: with_only
+    arm: both
