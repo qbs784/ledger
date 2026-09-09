@@ -9,7 +9,8 @@
     "test:self": "node tests/drift-gate.mjs --self-test && node tests/grader-controls.mjs --self-test",
     "test:triggers": "node tests/trigger-harness.mjs",
     "analyze:descriptions": "node tests/description-overlap.mjs",
-    "analyze:failures": "node tests/audit-failures.mjs"
+    "analyze:failures": "node tests/audit-failures.mjs",
+    "eval:receipts": "node tests/receipts-eval.mjs"
   },
   "license": "MIT"
 }

@@ -68,6 +68,8 @@ Real excerpts, not an illustration. Same prompt (*"Coverage is at 100% on the ne
 
 Both answers found the same real defect. Only one of them tells you how much of it was observed.
 
+**Measured, not asserted.** Sixteen pairs like this one, graded by a blind `opus` judge over a weighted rubric while `sonnet` produced the answers: weighted **2.84 → 4.55** on the first batch and **+1.20** pooled across all sixteen, 13 wins to 3, sign test p = 0.021. The row that carries the most weight is correctness, and it moved **+1.50** — the discipline did not buy better form with worse substance. It costs 2.0× the turns and 1.6× the spend. Method, caveats, and the defect this measurement found *in the skill itself* are in [evals/README.md](evals/README.md).
+
 ## The ten rules
 
 Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
@@ -77,7 +79,7 @@ Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
 3. Quote the output; do not summarise it.
 4. Separate "the check passed" from "the thing works."
 5. State what you did not verify, and why.
-6. A zero-result search proves nothing until it has matched a known positive.
+6. An absence is a claim, and needs the same evidence as a presence.
 7. Never report a plan as a result.
 8. A queued merge is not a landing. Coverage is not evidence.
 9. Answer "did it work?" with the evidence first and the conclusion second.

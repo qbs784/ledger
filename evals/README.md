@@ -166,6 +166,69 @@ An earlier measurement published 13 PASS out of 15 for the shipped configuration
 
 Those boards recorded whether a skill loaded during runs in which the model was mostly explaining that it could not proceed. They are not reproduced here because the corpus they were taken from no longer exists — every case now ships a verified fixture, and the floors are enforced by the gate.
 
+## The first measured, positive result — and the defect it found
+
+`/ledger:receipts` against itself off, 16 pairs, blind `opus` judge over a weighted rubric, `sonnet` as the agent, Bash granted, both arms carrying the plugin. Two batches: twelve pairs across four cases, then four more deliberately drawn from the two cases where the contrast was weakest.
+
+| Dimension | Weight | Off | On | Δ |
+|---|---|---|---|---|
+| correctness | 0.35 | 3.00 | 4.50 | **+1.50** |
+| attribution | 0.25 | 2.42 | 4.75 | +2.33 |
+| gaps | 0.20 | 2.42 | 4.50 | +2.08 |
+| calibration | 0.10 | 3.83 | 4.58 | +0.75 |
+| usability | 0.10 | 3.17 | 4.25 | +1.08 |
+| **weighted** | | **2.84** | **4.55** | **+1.71** |
+
+That is the first batch. Pooled over all 16 pairs the weighted difference is **+1.20**, with 13 wins and 3 losses, paired t(15) = 3.13, sign test p = 0.021. The two batches disagree in size (+1.71 against −0.34), and the second is four pairs drawn from the hardest two cases rather than a random sample — so read +1.71 as optimistic, +1.20 as conservative, and the between-case variance as large.
+
+**Correctness is the load-bearing row.** It carries the highest weight precisely to catch the failure that matters — buying better form with worse substance — and it moved the most of any heavily-weighted dimension. The discipline did not trade accuracy for presentation.
+
+The mechanism turned out not to be presentation at all. In the losing arm the model repeatedly answered from priors: *"The current directory is empty — there's no code here for me to search"*, after four turns. The directory held five files. With `receipts` on, the same prompt produced sixteen turns of grep, positive control, and file reads. **The skill's effect is on whether evidence gets gathered, not on how it gets formatted.** Cost: 2.0× the turns, 1.6× the spend, 1.9× the length.
+
+### It also caught the skill breaking its own rule
+
+One run had `receipts` on, followed rules 1, 2, 5 and 10 scrupulously — said what ran, marked itself unverified, listed what it had not checked, ended with what would settle it — and opened with this:
+
+> The working directory is empty […] `ls -la /private/var/…/receipts-2F6Uoa` → empty (only `.` and `..`).
+
+The harness recorded the directory contents at the end of that run: five files. Two turns were spent, `ls -la` among them, and the empty result became a conclusion.
+
+**The discipline shaped a false observation into a credible-looking one**, which is worse than an unshaped false observation because it is harder to doubt. The defence was already rule 6 and it was written too narrowly — it spoke of a "zero-result search" when the failure was a claim of absence about a directory. It now reads: *an absence is a claim, and it needs the same evidence as a presence*, with the measured failure quoted in the skill itself.
+
+That is what an eval is for. A rubric score of +1.71 would have been a pleasant number to publish and nothing more; the finding came from reading the runs.
+
+### What this measurement cannot tell you
+
+- **One judge model, one agent model.** A different judge may weigh attribution differently. Nothing here is cross-validated.
+- **Sixteen pairs.** The between-batch spread is wider than the pooled difference's standard error suggests is comfortable.
+- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the sixteen long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
+- **The judge never ran anything.** It graded correctness against source it was shown, so a claim that is wrong in a way the source does not reveal scores as right.
+
+## Grading an output style needs a judge, not a pattern
+
+The fifteen trigger cases ask whether a discipline was reached for and whether the answer contained a specific fact. Neither question fits `receipts`, which governs how *every* claim is presented. A regex cannot see the interesting failure there — buying better form with worse substance, an answer that is tidier and also wronger.
+
+[`tests/receipts-eval.mjs`](../tests/receipts-eval.mjs) grades it the way that failure demands:
+
+```sh
+npm run eval:receipts                       # billed
+node tests/receipts-eval.mjs --dry-run      # free: preflight only
+```
+
+Four cases with real fixtures, three runs each, both arms in one pass. Each pair goes to a **blind pairwise judge** over a weighted rubric — correctness 35%, attribution 25%, gap disclosure 20%, calibration 10%, usability 10%.
+
+Five design choices carry the result, and each answers a way this could have fooled itself:
+
+| Choice | What it prevents |
+|---|---|
+| Judge is `opus`, agent is `sonnet` | a model grading its own output prefers it |
+| A and B presented in randomised order | the judge learning that one slot always wins |
+| The fixture's source is given to the judge | "correctness" judged against the code rather than against plausibility |
+| Correctness weighted highest | a format change that quietly costs accuracy passing as an improvement |
+| Bash granted | with it denied, "nothing ran" dominates every answer and the contrast collapses |
+
+**Both arms carry the plugin.** The contrast is `/ledger:receipts` on against off — not this pack against no pack. And every pair's two full answers are written to `evals/results/receipts-*/`, because the lesson of the four rounds above is that a number is not trustworthy until someone has read the runs behind it.
+
 ## Auditing the graders against real answers
 
 `tests/grader-controls.mjs` pins each pattern from both sides and catches one of the two ways a pattern can go wrong: drifting wide enough to accept anything. It cannot catch the other. A pattern narrow enough to reject a correct answer looks exactly like a skill that failed, and reports as one.
