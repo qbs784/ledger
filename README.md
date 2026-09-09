@@ -125,18 +125,22 @@ This separation is enforced, not just intended. `tests/drift-gate.mjs` fails if 
 | `pushing-safely` | pushing, force-pushing, or checking whether it landed |
 | `recording-ui-evidence` | recording a UI demo as visual evidence |
 
-### The always-on router
+### The always-on router, and why its justification did not survive
 
-`hooks/hooks.json` injects the router into every session, and it is **on by default**. That is a deliberate reversal, and the reason is a measurement rather than a preference.
+`hooks/hooks.json` injects the router into every session, and it is **on by default**. That default was set on the strength of a measurement. The measurement was wrong, and the honest thing is to leave the default where it is only as long as the reason for it is stated accurately — so here is what a clean board says.
 
-Measured over 15 cases at three runs each, on a real stage with 88 tools and six plugins loaded, against a baseline arm with the injection stripped:
+Measured over 15 cases at three runs each, on a real stage with 88 tools and six plugins loaded, both arms in one pass, against a baseline arm with the injection stripped:
 
 | | Runs that produced the right answer | Runs where the intended skill loaded |
 |---|---|---|
-| with the injection | 42 of 45 — 93% | 51 of 54 — 94% |
-| descriptions alone | 30 of 45 — 67% | 39 of 54 — 72% |
+| with the injection | 34 of 42 — 81% | 50 of 54 — 93% |
+| descriptions alone | 36 of 44 — 82% | 44 of 53 — 83% |
 
-Read both columns, because they do not say the same thing. The right-answer column is the one an eval runner scores; the loaded column only says which skill got named. **Both differences clear conventional significance** (z = 3.16 and z = 3.10), so the injection is measured to change what the session produces and not merely how it routes. One case shows that split cleanly: with the router in context the adapter file was written in two runs of three, and without it in none — while the skill itself loaded in all six.
+**No benefit was detected.** Paired by case: two cases better with the injection, two worse, eleven unchanged; sign test p = 1.0. The routing difference points the expected way and does not reach significance at this size. Three of the 45 injected runs also exhausted their turn budget and produced no answer, against none of the 45 without it.
+
+Earlier versions of this file claimed a large, significant gain here. That claim came from boards contaminated three different ways — missing fixtures, runs truncated at a limit being scored as wrong answers, and ten baseline runs that never reached the model at all — and every one of the three errors flattered this pack. [evals/README.md](evals/README.md) lists them.
+
+At fifteen cases and three runs each this corpus cannot see an effect smaller than about twenty points, so **not detected is not the same as absent**. Settling it needs roughly 200 runs per arm. Until then, treat the injection as an unproven cost: it is about 1,800 tokens per session, and you can switch it off in one step below.
 
 The injection is about 7 KB, roughly 1,800 tokens on every session start, clear, and compact. If that is not a trade you want, delete `hooks/` from your installed copy or set the plugin's `hooks` manifest path to something that does not exist. The router stays reachable by name either way. The full boards, the failures, and what four rounds of measurement found wrong with the corpus itself are in [evals/README.md](evals/README.md).
 

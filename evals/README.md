@@ -105,48 +105,37 @@ Every round of measurement found defects in the corpus before it found anything 
 
 The corpus also violated three floor invariants the official runner documents as non-negotiable, and did so for its entire existence until they were checked: every case was graded only by `tool_used` (which the runner excludes from the score), every case set `runs: 1` against a default of 3, and no case had an outcome grader. The gate now fails all three, each with a negative control.
 
-## What the injection is worth
+## What the injection is worth: nothing that this corpus can detect
 
-Taken 2026-09-08 against CLI 2.1.263, model `sonnet`, **three runs per case in real-environment mode** — the operator's own skills, plugins, hooks and MCP servers loaded, 88 tools and six plugins visible. Both arms ran the same 15 cases.
-
-**This is a composite.** Eleven cases come from one full pass over both arms; four were re-run after that pass found defects in them — three fixtures and one grader, all described below. It is not one clean board, and a single command produces one.
-
-Each case is graded by an **outcome** grader — did the answer contain what the user would have noticed the absence of — plus `tool_used` graders recording which skill loaded. The runner excludes the second kind from the score in both arms, so the two columns below are not interchangeable.
+Taken 2026-09-09 against CLI 2.1.263, model `sonnet`, three runs per case in real-environment mode, both arms in one pass, with every measurement defect listed below already fixed. 90 model calls. Of those, 42 of 45 shipped runs and 44 of 45 baseline runs completed normally; the exclusions are named in the boards.
 
 | | Runs that produced the right answer | Runs where the intended skill loaded |
 |---|---|---|
-| shipped configuration | **42 of 45 — 93%** | 51 of 54 — 94% |
-| `--no-router`, descriptions alone | **30 of 45 — 67%** | 39 of 54 — 72% |
-| difference | **+26 points**, z = 3.16 | +22 points, z = 3.10 |
+| shipped configuration | 34 of 42 — 81% | 50 of 54 — 93% |
+| `--no-router`, descriptions alone | 36 of 44 — 82% | 44 of 53 — 83% |
+| difference | **−1 point**, z = −0.10 | +10 points, z = 1.52 |
 
-Both differences clear conventional significance, and **the injection moves outcomes at least as much as it moves routing**. An earlier version of this file said the opposite — that routing moved more than twice as much as outcomes — and that was an artefact of two defects since fixed: runs cut off at the turn limit were being counted as wrong answers rather than as missing observations, and three fixtures did not put the model in the situation their prompt described. Correcting both moved the outcome column and left the routing column where it was.
+Paired by case, which is the right analysis because the arms share their cases: **two cases better with the injection, two worse, eleven unchanged.** Exact sign test p = 1.0. Paired t(14) = −0.27.
 
-Per case, with the outcome column first because it is the one that is scored:
+**No effect on outcomes was detected, and the effect on routing did not reach significance.** The injection also has a measured cost beyond its 1,800 tokens: three of the 45 shipped runs exhausted their turn budget and produced no final answer, against none of the 45 baseline runs.
 
-| Case | Outcome: shipped | Outcome: baseline | Route: shipped | Route: baseline |
-|---|---|---|---|---|
-| `adapter-bootstrap` | 2/3 | **0/3** | 3/3 | 3/3 |
-| `adding-a-validator` | 3/3 | 3/3 | 3/3 | 3/3 |
-| `change-narration-cleanup` | 3/3 | 2/3 | 3/3 | 3/3 |
-| `claiming-done` | 3/3 | 3/3 | 3/3 | 3/3 |
-| `deleting-an-unused-option` | 3/3 | 3/3 | 3/3 | 3/3 |
-| `documenting-a-command` | 3/3 | 3/3 | 2/3 | 0/3 |
-| `finding-the-change-set` | 3/3 | 3/3 | 3/3 | 2/3 |
-| `flake-investigation` | 3/3 | 3/3 | 3/3 | 3/3 |
-| `force-pushing-after-rebase` | 2/3 | 2/3 | 3/3 | 3/3 |
-| `narrow-check-selection` | 2/3 | 2/3 | 3/3 | 3/3 |
-| `new-fixture-isolation` | 3/3 | 1/3 | 6/6 | 4/6 |
-| `recording-a-ui-demo` | 3/3 | **0/3** | 3/3 | **0/3** |
-| `retiring-a-decision-record` | 3/3 | 2/3 | 6/6 | 6/6 |
-| `reviewing-a-diff` | 3/3 | 1/3 | **1/3** | **0/3** |
-| `shorten-a-readme` | 3/3 | 2/3 | 6/6 | 3/6 |
+Two things this does **not** say. It does not say the injection is useless — at fifteen cases and three runs each, this corpus could not detect an effect smaller than roughly twenty points, and failing to detect is not the same as ruling out. And it does not say the skills do not work: both arms answered correctly about four times in five.
 
-Four rows are worth reading individually, because they are the four different things this corpus can now distinguish and the previous one could not:
+### This is the third number published here, and the first two were artefacts
 
-- **`adapter-bootstrap` — the skill loaded 3/3 on both arms, and the adapter file was written 2/3 with the injection and 0/3 without.** The baseline runs also used *more* turns (29, 24, 25 against 23, 20, 24) and still produced nothing. This is the clearest single piece of evidence that the injection changes what the user gets and not only which skill is named, and it is invisible to a route-only grader, which scores this case identically on both arms.
-- **`documenting-a-command` — the outcome was right 3/3 on both arms while the route differed 2/3 against 0/3.** The model reported the real default port, `7420`, which only a read of `src/server.mjs` produces — including in runs where no skill loaded at all. Here the pack demonstrably did not cause the outcome, and a route-only grader would have called the baseline a total failure.
-- **`recording-a-ui-demo` — 0/3 on both columns without the injection, 3/3 on both with it.** The one case where the whole result rests on the router being in context.
-- **`reviewing-a-diff` — the outcome was right 3/3 with the injection while the intended skill loaded 1/3.** The review found the planted cache-before-confirm defect whichever route it took. This case has never once loaded `reviewing-as-cis-complement` reliably, and it no longer matters much: what the case exists to protect happens anyway. See the four-round history above for why that took four attempts to see.
+| Published | Claimed | What was actually wrong |
+|---|---|---|
+| 13/15 against 9/15, "four failures fixed" | a large routing gain | Thirteen cases had no fixture, so the model opened an empty directory. Only 2 of 15 shipped runs produced any answer. The board measured routing during runs that could not show help. |
+| 79% against 65% outcomes, 94% against 65% routing | routing gains twice the outcome gain | Runs cut off at the turn limit were scored as wrong answers, and three fixtures did not build the situation their prompt described. |
+| 93% against 67%, z = 3.16 | a large, significant gain on both | **Ten baseline runs never reached the model at all** — `subtype: "success"` with `is_error: true` and a body reading `Not logged in · Please run /login`. All ten were in the arm whose failure made the pack look better. |
+
+Every one of the three erred in the pack's favour, and none of the three was caught by reading the numbers. Each was caught by reading the runs behind them. That is the practice worth copying, and [`tests/audit-failures.mjs`](../tests/audit-failures.mjs) exists to make it cheap.
+
+### The always-on hook is currently unjustified
+
+`hooks/hooks.json` injects the router into every session by default, and the stated reason was a measurement. That measurement does not survive. Until a larger corpus says otherwise, the honest position is that the injection costs about 1,800 tokens per session and occasionally a turn budget, for no benefit this corpus can see.
+
+Detecting a ten-point difference at 80% power would need roughly 200 runs per arm rather than 45. That is about $80 at the rates observed here, and it is the experiment that would settle it.
 
 ### What the four re-run cases found, and none of it was a description
 
@@ -176,6 +165,19 @@ The lesson is the one the pack makes elsewhere: a red check is a question, and t
 An earlier measurement published 13 PASS out of 15 for the shipped configuration against 9 for the baseline, and called it four failures fixed. Inspecting the 31 transcripts behind it showed that in the shipped arm only **2 of 15 runs produced any real answer**: seven refused with some form of "this directory is empty", and six ended at `max_turns` with no final message at all. Thirteen of the fifteen cases shipped no fixture, so the model opened an empty scratch directory and had nothing to work on; `max_turns` was set to 3–6 against the runner's default of 10, and `runs` to 1 against its default of 3.
 
 Those boards recorded whether a skill loaded during runs in which the model was mostly explaining that it could not proceed. They are not reproduced here because the corpus they were taken from no longer exists — every case now ships a verified fixture, and the floors are enforced by the gate.
+
+## Auditing the graders against real answers
+
+`tests/grader-controls.mjs` pins each pattern from both sides and catches one of the two ways a pattern can go wrong: drifting wide enough to accept anything. It cannot catch the other. A pattern narrow enough to reject a correct answer looks exactly like a skill that failed, and reports as one.
+
+```sh
+npm run analyze:failures            # every recorded transcript
+node tests/audit-failures.mjs <dir> # one captures directory
+```
+
+It replays every outcome grader against every recorded answer and prints the ones it rejected. **Each rejection is a question, not a verdict.** Read the answer: if it did the job, the pattern is too narrow — widen it, and pin that phrasing as a sourced positive so it cannot be lost again.
+
+Running it the first time found something else entirely. Ten runs in one arm had never reached the model at all: the session returned `subtype: "success"` with `is_error: true` and a 33-character body reading `Not logged in · Please run /login`. The harness had no idea, so ten non-measurements were scored as ten wrong answers, in the arm that made the pack look better. The harness now marks such a run `INVALID`, and refuses to start a billed suite at all until one cheap call proves the session can reach the model.
 
 ## What is still open
 

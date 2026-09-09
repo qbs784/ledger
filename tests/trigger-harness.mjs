@@ -22,7 +22,7 @@ import { readdirSync, readFileSync, existsSync, mkdtempSync, rmSync, mkdirSync, 
 import { join, dirname, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { spawn, execFileSync } from 'node:child_process'
+import { spawn, spawnSync, execFileSync } from 'node:child_process'
 
 const PACK = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const CASES_DIR = join(PACK, 'evals', 'triggers')
@@ -607,6 +607,30 @@ console.log('')
 // against the runs it came from.
 const arm = `${REAL_ENV ? 'real' : 'isolated'}-${NO_ROUTER ? 'norouter' : 'router'}`
 const capturesDir = join(PACK, 'evals', 'results', `run-${cliVersion.split(' ')[0]}-${cases.length}case-${arm}`)
+
+// One trivial call before spending on dozens. A session that cannot
+// authenticate still exits 0 and still returns a result event — with
+// `subtype: "success"`, `is_error: true`, and a body reading "Not logged in".
+// Left unchecked that is indistinguishable from a wrong answer, and ten of them
+// reached a published board as ten failures of the pack. Checking costs one
+// cheap call; not checking cost a conclusion.
+if (!DRY_RUN) {
+  const probe = spawnSync('claude', ['-p', 'Reply with the single character: 4', '--output-format', 'json', '--max-turns', '1'], { encoding: 'utf8' })
+  let verdict
+  try {
+    verdict = JSON.parse(probe.stdout)
+  } catch {
+    console.error(`preflight: could not parse a result from \`claude -p\` (exit ${probe.status})`)
+    console.error(probe.stderr.trim().slice(0, 400) || probe.stdout.trim().slice(0, 400))
+    process.exit(2)
+  }
+  if (verdict.is_error === true) {
+    console.error(`preflight: this session cannot reach the model — ${JSON.stringify(String(verdict.result).slice(0, 120))}`)
+    console.error('Nothing was billed. Fix the session, then re-run.')
+    process.exit(2)
+  }
+  console.log(`preflight: session reachable (${JSON.stringify(String(verdict.result).trim().slice(0, 20))})`)
+}
 mkdirSync(capturesDir, { recursive: true })
 
 let failed = loadFailed
@@ -671,10 +695,25 @@ for (const testCase of cases) {
   // observation, not a wrong one, and counting it against the skill blames the
   // pack for this harness's budget. Truncated runs are therefore excluded from
   // the denominator and reported separately.
-  const truncated = attempts.map(attempt => attempt.stream.result?.subtype === 'error_max_turns')
-  const truncatedCount = truncated.filter(Boolean).length
+  // `is_error` on the result event covers what `subtype` does not. A session
+  // that could not authenticate returns `subtype: "success"` with `is_error:
+  // true` and a 33-character body reading "Not logged in - Please run /login".
+  // Ten such runs reached a published board as ten wrong answers before this
+  // was checked, and they were the difference between two conclusions.
+  const failedToRun = attempts.map(attempt => attempt.stream.result?.is_error === true
+    && attempt.stream.result?.subtype !== 'error_max_turns'
+    && attempt.stream.result?.subtype !== 'error_max_budget_usd')
+  const failedCount = failedToRun.filter(Boolean).length
+  if (failedCount > 0) {
+    caseState = 'INVALID'
+    const sample = attempts.find((_, index) => failedToRun[index])?.stream.result?.result ?? ''
+    graderLines.push(`  INVALID  ${failedCount}/${runCount} run(s) never reached the model — the session itself failed: ${JSON.stringify(sample.slice(0, 90))}`)
+  }
+
+  const truncated = attempts.map((attempt, index) => failedToRun[index] || attempt.stream.result?.subtype === 'error_max_turns' || attempt.stream.result?.subtype === 'error_max_budget_usd')
+  const truncatedCount = truncated.filter(Boolean).length - failedCount
   if (truncatedCount > 0) {
-    graderLines.push(`  note      ${truncatedCount}/${runCount} run(s) hit the turn limit and produced no final answer — excluded from outcome denominators, not counted as failures`)
+    graderLines.push(`  note      ${truncatedCount}/${runCount} run(s) hit a turn or budget limit and produced no final answer — excluded from outcome denominators, not counted as failures`)
     if (truncatedCount === runCount) {
       caseState = 'INVALID'
       graderLines.push('  INVALID  every run was truncated; this case measures the turn budget, not the skill')
@@ -687,7 +726,11 @@ for (const testCase of cases) {
     // either happened before the cut or it did not. Only answer-shaped graders
     // lose their subject.
     const answerShaped = grader.type === 'regex' || grader.type === 'llm'
-    const scores = answerShaped ? allScores.filter((_, index) => !truncated[index]) : allScores
+    // A session that never reached the model is excluded from every grader: no
+    // answer, and no tool call either. A run cut off at a limit did reach the
+    // model, so its route still counts — the Skill call happened before the cut
+    // or it did not.
+    const scores = allScores.filter((_, index) => !failedToRun[index] && !(answerShaped && truncated[index]))
     if (scores.length === 0) {
       graderLines.push(`  UNSCORED      ${grader.name ?? grader.type}  every run was truncated before an answer`)
       unscored = true
