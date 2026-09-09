@@ -20,6 +20,7 @@
   ],
   "skills": [
     "./skills/adapting-to-a-project",
+    "./skills/receipts",
     "./skills/curating-decision-records",
     "./skills/designing-concurrent-tests",
     "./skills/diagnosing-flakes",

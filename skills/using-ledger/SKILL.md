@@ -51,6 +51,7 @@ change lands with nothing behind it.
 
 | When you are… | Load |
 |---|---|
+| tired of answers that claim things ran when nothing did — yours included | `receipts` |
 | starting in a new repository, or a skill reports a missing adapter value | `adapting-to-a-project` |
 | about to state that something works, passes, is covered, or is done | `what-counts-as-evidence` |
 | choosing which checks to run, or about to repeat one that passed | `refusing-busywork` |
