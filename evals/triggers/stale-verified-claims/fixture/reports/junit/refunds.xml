@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="refunds" timestamp="2026-02-11T22:02:51" tests="2" failures="0">
+  <testsuite name="test/refunds.test.mjs" tests="2" failures="0">
+    <testcase name="refund-is-capped" time="0.002"/>
+  </testsuite>
+</testsuites>

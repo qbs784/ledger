@@ -27,6 +27,8 @@ There is one case per **model-invocable** skill — the drift gate fails if such
 | `acceptance-as-adjective` | names reads as the activity that does not count *(regex)* | `specifying-acceptance` | — | files |
 | `unit-table-unsettled` | names the two units that edit the same function *(regex)* | `planning-the-work` | — | files |
 | `unit-exit-gate` | names a gate part that has not run *(regex)* | `running-a-bounded-loop` | — | files |
+| `scenario-through-the-back-door` | names the seeding step as why the suite proves nothing *(regex)* | `validating-real-scenarios` | — | files |
+| `stale-verified-claims` | finds the provenance that predates the code it covers *(regex)* | `metabolizing-knowledge` | — | files |
 
 Every case carries an outcome grader as its **primary** check, because the runner excludes a `tool_used: Skill` grader for the plugin under test from the score in both arms. The route column is therefore reported, never scored — it answers "which skill did this", not "did it work". Three cases also carry a **near-miss negative**: a sibling that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
 
@@ -104,6 +106,48 @@ closing a leak in the isolation it already claimed, since `--setting-sources ""`
 strips the operator's skills and plugins while their shell configuration came
 through the same seam. `--real-environment` leaves it, because there the
 operator's shell is part of the stage.
+
+## The two recycling cases, and three defects they found in one sitting
+
+Added with the last two skills. Twelve billed runs, $1.76.
+
+| | first board | after | what changed |
+|---|---|---|---|
+| `metabolizing-knowledge` route | **3/3** | — | nothing; it fired first time |
+| `stale-verified-claims` outcome | 2/3 | 2/3 | skill stopped over-blocking; grader widened |
+| `validating-real-scenarios` route | 1/3 | **3/3** | the case's prompt, not the description |
+| `scenario-through-the-back-door` outcome | 2/3 | **3/3** | same prompt change |
+
+**The case was wrong, not the description.** `validating-real-scenarios` loaded
+once in three, and twice the model reached for `what-counts-as-evidence`
+instead — correctly. The prompt read "the scenario suite is green, can we call
+this accepted?", which is that sibling's territory, and this skill's own
+negative route sends the question there by name. Both mis-routed runs answered
+well, quoting the seeding call and the create path that never persists. Re-aimed
+at accepting against a real deployment — with the description untouched, so the
+next board would be attributable — it went to 3/3 on both graders and turns
+went from 4,3,10 to 11,11,11.
+
+**A skill that obeyed itself into doing nothing.** One run of
+`metabolizing-knowledge` produced 653 characters in 5 turns: no `.ledger.yml`
+existed, the skill said to stop on a missing adapter value, and it stopped —
+while the fixture's registry sat in plain sight with all three staleness forms
+visible in it. The router already warns against exactly this, and says it has
+been observed before: *treating the file's absence as "this pack is not adopted
+here, skip it" is the one reading to avoid*. The new skill had reproduced the
+warned-about failure, and no check in the repository could see it, because the
+prose was not inconsistent with anything — it was simply wrong. Both new skills
+now split the dependency where it actually falls: reading and auditing need to
+find a file, which is doable; only re-verification needs a project command, and
+only that stops.
+
+**A fourth grader measuring phrasing.** The best of the three runs scored zero:
+it classified all three forms correctly, downgraded them with reasons recorded,
+and found something unplanted — the whole `test/` directory the registry cites
+is gone. It wrote "after the recorded pass" where the pattern demanded the words
+provenance, artifact or a date. Widened, with that run's own wording pinned as
+the first positive. The offline controls are the verification here; re-rolling
+the model would have measured the model, not the fix.
 
 ## Three axes, not one
 
@@ -272,7 +316,7 @@ That is what an eval is for. A rubric score of +1.71 would have been a pleasant 
 
 - **One judge model, one agent model.** A different judge may weigh attribution differently. Nothing here is cross-validated.
 - **Sixteen pairs.** The between-batch spread is wider than the pooled difference's standard error suggests is comfortable.
-- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the twenty long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
+- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the twenty-two long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
 - **The judge never ran anything.** It graded correctness against source it was shown, so a claim that is wrong in a way the source does not reveal scores as right.
 
 ## Grading an output style needs a judge, not a pattern

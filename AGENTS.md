@@ -20,7 +20,7 @@ The skills are plain directory bundles under `skills/`, with `name` + `descripti
 ## 2. Tell the user the two entry points
 
 - `/ledger:receipts` — turns on the output discipline: every claim about state arrives with the command that produced it, and anything unverified says so. Stays on until they say `stop receipts`.
-- `/ledger:using-ledger` — the map of the other twenty skills and which to reach for at each stage of a change.
+- `/ledger:using-ledger` — the map of the other twenty-two skills and which to reach for at each stage of a change.
 
 ## 3. Do not
 

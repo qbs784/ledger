@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 510" width="800" height="510" role="img"
-     aria-label="Where each of the twenty skills sits in one iteration: an entry router, six numbered stages from qualifying a request through curation, and two skills that apply at every stage.">
+     aria-label="Where each of the twenty-two skills sits in one iteration: an entry router, six numbered stages from qualifying a request through curation, and two skills that apply at every stage.">
   <title>Where each skill sits in one iteration</title>
   <!--
     Deliberately NOT organised by the five pillars: a pillar spans several
@@ -90,10 +90,12 @@
 
     <rect class="box" x="540" y="240" width="240" height="146" rx="6" />
     <circle class="acc" cx="562" cy="264" r="9" /><text class="num" x="562" y="268" text-anchor="middle">6</text>
-    <text class="head" x="578" y="268">Curate &amp; diagnose</text>
+    <text class="head" x="578" y="268">Validate &amp; curate</text>
     <line class="rule" x1="554" y1="282" x2="766" y2="282" />
-    <text class="sk" x="554" y="302">curating-decision-records</text>
+    <text class="sk" x="554" y="302">validating-real-scenarios</text>
     <text class="sk" x="554" y="320">diagnosing-flakes</text>
+    <text class="sk" x="554" y="338">curating-decision-records</text>
+    <text class="sk" x="554" y="356">metabolizing-knowledge</text>
   </g>
 
   <!-- applies throughout -->

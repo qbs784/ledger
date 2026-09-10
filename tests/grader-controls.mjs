@@ -385,6 +385,70 @@ const CONTROLS = {
       ],
     },
   },
+  'scenario-through-the-back-door': {
+    'names the seeding step as why the suite proves nothing': {
+      positives: [
+        {
+          label: 'names the seeding call and what it decouples',
+          text: 'No. scenarios/run.mjs calls put() itself before driving the story, so the retrieval assertion is satisfied by the row the scenario wrote, not by anything createOrder did. Take that line out and the step fails — which is the honest state, because createOrder builds an order and returns it without ever persisting.',
+        },
+        {
+          label: 'states it from the create path',
+          text: 'The suite is green and the flow is broken: createOrder never calls put, so no order is stored on the path a customer takes. The scenario hides this by arranging the order directly in the store first.',
+        },
+        {
+          label: 'names it as a bypass without quoting the function',
+          text: 'This is not an accepted story. The scenario seeds its own state directly rather than going through the API, so the create path is never exercised at all — the only thing the green proves is that the assertion matches the value the scenario itself inserted.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'accepts on the green suite',
+          text: 'Yes — S1 place-and-retrieve passes and that is the stated acceptance condition in docs/acceptance.md. The checkout flow can be marked accepted.',
+        },
+        {
+          label: 'asks for more coverage without finding the defect',
+          text: 'One scenario is thin for a checkout flow. I would add cases for an empty cart, a declined payment, and a duplicate submission before accepting, and also run the suite against the compose stack rather than locally.',
+        },
+        {
+          label: 'discusses the store without the divergence',
+          text: 'The order store is an in-memory Map, so nothing survives a restart. put() and get() look fine for a single process; consider persisting to a real database before this goes anywhere near production.',
+        },
+      ],
+    },
+  },
+  'stale-verified-claims': {
+    'finds the provenance that predates the code it covers': {
+      positives: [
+        {
+          label: 'recorded run, 2026-09-10 isolated board: names the pass rather than the artifact',
+          text: 'No — all three entries in the verified list are stale, and I have downgraded them in docs/traceability.yml with reasons recorded. FR-11: Stale green — netOfDiscount was reworked 2026-07-14 (per-line-item discount vs. subtotal), after the recorded pass. FR-12: Referent moved — capRefund was deleted 2026-05-30. FR-13: was never linked to a test at all, yet recorded as verified from the start.',
+        },
+        {
+          label: 'compares the two dates',
+          text: 'FR-11 is not verified in any useful sense. Its provenance, reports/junit/pricing.xml, is stamped 2026-03-02, and src/pricing.mjs records netOfDiscount being reworked on 2026-07-14 — the recorded pass predates the behaviour it claims to cover, so it is a stale green. Re-run before reading anything into it.',
+        },
+        {
+          label: 'states it as the artifact being older',
+          text: 'The junit report for pricing is older than the change it is supposed to cover, so FR-11 needs re-running rather than trusting. Separately FR-12 points at capRefund, which the change log says moved into the ledger writer, and FR-13 claims verified with no test and no artifact at all.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'reports the list as accurate',
+          text: 'The registry looks consistent. FR-11 and FR-12 are both verified with linked tests and provenance files present, and FR-13 is marked verified as well. Nothing needs changing this quarter.',
+        },
+        {
+          label: 'only counts the unlinked entry',
+          text: 'One problem: FR-13 has no test and no provenance, so it should not be marked verified. FR-11 and FR-12 both have artifacts on disk and look fine.',
+        },
+        {
+          label: 'flags the dates as merely old',
+          text: 'The last_verified dates are all several months back, so everything here is due for a refresh on age alone. I would re-run the whole registry quarterly regardless of what changed.',
+        },
+      ],
+    },
+  },
   'narrow-check-selection': {
     'names the narrow lane rather than the suite': {
       positives: [
