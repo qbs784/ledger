@@ -42,6 +42,11 @@ jobs:
       - name: change-scope behavior
         run: node tests/change-scope.test.mjs
 
+      - name: corrupted-observation classifier
+        # It decides whether a run's numbers count, so a mistake in it does not
+        # error — it publishes a board that looks measured.
+        run: node tests/blind-observation.test.mjs
+
       - name: Seal verifier self-test
         # It ships a --self-test that plants each defect class; a shipped script
         # whose own negative controls never run is a script nobody has watched fail.
