@@ -96,6 +96,7 @@ Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
 | `adapting-to-a-project` | setting up in a new repository |
 | `what-counts-as-evidence` | about to state that something works, passes, or is done |
 | `refusing-busywork` | choosing checks, or about to repeat one that passed |
+| `qualifying-a-request` | a request for new work arrives, before any design exists |
 | `scoping-a-change` | working out what a change actually touches |
 | `proving-the-regression` | adding a guard; asserting a fix works |
 | `designing-concurrent-tests` | a test touches ports, files, env, clocks, or teardown |

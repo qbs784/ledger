@@ -265,6 +265,34 @@ const CONTROLS = {
       ],
     },
   },
+  'qualifying-a-request': {
+    'connects the delivery guarantee to what retry breaks': {
+      positives: [
+        {
+          label: 'names the guarantee and what retry does to it',
+          text: 'Before writing any of this: retry breaks the at-most-once guarantee your contract publishes, and the contract page says two integrators skip their own deduplication because of it. So this is not an additive change — it renegotiates a published promise. Who is actually blocked by the dropped deliveries today?',
+        },
+        {
+          label: 'states it in the other order',
+          text: 'Adding a backoff loop means the at-most-once promise in docs/webhook-contract.md is no longer true, and consumers were told they could rely on it. Record the contract change as a decision first, and capture a baseline of current delivery behaviour before touching the sender.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'implements it and offers to update the docs afterwards',
+          text: 'Added an exponential backoff loop with three attempts and jitter in src/webhook.mjs, incrementing x-delivery-attempt each time. The docs mention at-most-once delivery, so I will update docs/webhook-contract.md to describe the new behaviour.',
+        },
+        {
+          label: 'pure implementation, no contract awareness',
+          text: 'Here is the retry wrapper: a for loop over three attempts with a doubling delay, returning on the first ok response. I kept the existing headers and added the attempt counter.',
+        },
+        {
+          label: 'uses the break vocabulary about something else',
+          text: 'This will not break anything. I will guarantee correctness by keeping the event id stable across attempts, and cap it at no longer than five retries.',
+        },
+      ],
+    },
+  },
   'narrow-check-selection': {
     'names the narrow lane rather than the suite': {
       positives: [

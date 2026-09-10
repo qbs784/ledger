@@ -96,6 +96,7 @@ claude plugin install ledger@ledger
 | `adapting-to-a-project` | 在一个新仓库里做初始配置 |
 | `what-counts-as-evidence` | 正要声称某件事能用、通过了、或者做完了 |
 | `refusing-busywork` | 挑选要跑哪些检查，或正要重复一个已经通过的 |
+| `qualifying-a-request` | 新需求到手，还没有任何设计的时候 |
 | `scoping-a-change` | 弄清一次改动到底碰了什么 |
 | `proving-the-regression` | 加一道守卫；声称一个修复有效 |
 | `designing-concurrent-tests` | 测试碰到端口、文件、环境变量、时钟或清理 |

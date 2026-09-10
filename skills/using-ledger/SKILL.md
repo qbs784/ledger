@@ -55,6 +55,7 @@ change lands with nothing behind it.
 | starting in a new repository, or a skill reports a missing adapter value | `adapting-to-a-project` |
 | about to state that something works, passes, is covered, or is done | `what-counts-as-evidence` |
 | choosing which checks to run, or about to repeat one that passed | `refusing-busywork` |
+| handed a request for new work, before any design or plan exists for it | `qualifying-a-request` |
 | working out what a change actually touches | `scoping-a-change` |
 | adding a guard, rule, or validator; asserting a fix works | `proving-the-regression` |
 | writing or reviewing a test that touches ports, files, env, clocks, or teardown | `designing-concurrent-tests` |
