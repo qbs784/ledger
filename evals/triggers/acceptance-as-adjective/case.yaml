@@ -1,0 +1,38 @@
+schema_version: "1.0"
+name: acceptance-as-adjective
+execution:
+  prompt: "Here are the acceptance criteria for session expiry. Anything to fix before we implement?"
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # Criteria 2 and 3 are adjectives with no threshold and no assertion. Criterion 1
+  # is the harder one: "7 days of inactivity" has a nearest wrong reading sitting
+  # right next to it, and the code has already silently chosen it — touch() is
+  # called from write() and from nothing else, so a session read every day for a
+  # month expires. Both shipped tests pass under either reading, because both drive
+  # the write path.
+  #
+  # The grader asks for the reading that separates them, not for the word
+  # "ambiguous". Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: names reads as the activity that does not count
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(read|reads|reading|get|fetch)[\s\S]{0,160}(do(es)?n.t|does not|do not|never|no longer|fails? to)[\s\S]{0,80}(count|update|refresh|touch|extend|reset)|(only|just)[\s\S]{0,60}writes?[\s\S]{0,100}(count|update|refresh|touch|extend|reset)'
+  - type: tool_used
+    name: loads specifying-acceptance
+    tool: Skill
+    input_match: specifying-acceptance
+    min: 1
+  - type: llm
+    name: rejects the adjectives and names the competing reading
+    criteria: |
+      The response must say that "handled securely" and "performant" are not
+      acceptance criteria as written, because neither names an observable
+      response or a threshold that could fail. It must also identify that
+      "inactivity" has more than one available reading, and that the
+      implementation counts only writes, so a session that is read continuously
+      still expires. Noting that the existing tests pass under either reading
+      satisfies the second part as well.

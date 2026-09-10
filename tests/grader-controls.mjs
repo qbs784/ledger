@@ -293,6 +293,34 @@ const CONTROLS = {
       ],
     },
   },
+  'acceptance-as-adjective': {
+    'names reads as the activity that does not count': {
+      positives: [
+        {
+          label: 'states the divergence directly',
+          text: 'Criterion 1 is the one to fix first. "Inactivity" can mean time since the last request or time since the last write, and src/session.mjs has already picked the second: touch() is called from write() and nowhere else, so reads do not refresh lastSeen. A session read every day for a month expires.',
+        },
+        {
+          label: 'states it from the write side',
+          text: 'As implemented, only writes reset the expiry clock, so the criterion as written does not describe the behaviour. Both tests drive the write path, so neither would go red if the wrong reading were the one you wanted.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'flags the adjectives but misses the ambiguity',
+          text: 'Criteria 2 and 3 are not testable — "securely" and "performant" have no thresholds. Criterion 1 and 4 look fine; 4 already names an observable response and an event.',
+        },
+        {
+          label: 'calls it ambiguous without naming what diverges',
+          text: 'Criterion 1 is a little ambiguous and could be tightened. I would restate it more precisely before implementing, and add a test for the boundary at exactly seven days.',
+        },
+        {
+          label: 'talks about reads without the divergence',
+          text: 'The read path returns the session object directly, which is fine. I will add a getter so callers do not reach into the map, and keep the expiry check where it is.',
+        },
+      ],
+    },
+  },
   'narrow-check-selection': {
     'names the narrow lane rather than the suite': {
       positives: [
