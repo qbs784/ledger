@@ -149,6 +149,51 @@ provenance, artifact or a date. Widened, with that run's own wording pinned as
 the first positive. The offline controls are the verification here; re-rolling
 the model would have measured the model, not the fix.
 
+## The entry skill did not produce its artifact, and nobody had run the case
+
+`adapter-bootstrap` had never been executed. Its row in the table above records
+what it was designed to check; this is the first time it carried a reading.
+
+Nine billed runs across three arms, $2.03. The instrument was held constant —
+the baseline arm is the pre-batch pack with the current harness copied in, so
+only what is under test differs.
+
+| arm | writes the adapter file | route | turns |
+|---|---|---|---|
+| baseline pack, 17 skills, 8 adapter blocks | 1/3 | 3/3 | 17,20,21 |
+| current pack, before the fix | 0/3 | 3/3 | 21,23,24 |
+| current pack, after the fix | **3/3** | 3/3 | 29,20,23 |
+
+**The defect was pre-existing, and it was an ordering.** Across the first two
+arms, five of six runs stopped to ask the two questions the repository cannot
+answer — protected seams, and whether the project keeps decision records —
+*before* writing anything. The one run that passed wrote the file first and
+asked afterwards. The procedure said to ask and never said when the file lands,
+so whether anything got written came down to which order the model happened to
+pick.
+
+Three things already in the repository said the file should come first: the
+template's own convention that unfilled keys stay present and `null`, because an
+absent key cannot be told apart from one nobody considered; the skill's report
+rule that the adapter is not complete merely because the file exists, which
+presupposes that it does; and the behaviour of the run that passed. The step now
+says to write what was executed, leave the rest `null` with reasons under
+`unverified`, and ask against a file that exists. That took it to 3/3.
+
+**What the board cannot say.** The baseline was 1/3 and the current pack before
+the fix was 0/3 — a difference of one run at three runs per arm, which this
+corpus cannot resolve. Turns rose in the same direction, consistent with three
+more adapter blocks to fill, and that is a second weak signal rather than a
+measurement. Settling it would need tens of runs per arm and the fix covers
+either case.
+
+**Why no check could have caught this.** The gate compares prose against the
+tree: a router that omits a skill, a table that drifts, a resource nothing
+names, a count that no longer matches. Here the prose contradicted nothing. It
+was internally consistent, consistent with the template, and wrong about the
+order in which a human and a file should meet. Twenty-two planted defects and a
+hundred and seven grader controls stayed green throughout.
+
 ## Three axes, not one
 
 The harness has three independent switches, and the numbers only mean something once you know where all three sat.
