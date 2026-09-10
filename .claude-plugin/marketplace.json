@@ -10,7 +10,7 @@
     {
       "name": "ledger",
       "source": "./",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Documentation as substrate, evidence over self-report, and rot resistance as a build requirement.",
       "license": "MIT",
       "author": {

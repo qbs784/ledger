@@ -45,7 +45,7 @@ Every rule traces to a commit, a postmortem, or a decision record — **includin
 
 ## The separation is enforced, not intended
 
-`tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 21 planted defects; a gate not shown to fail is not a gate.
+`tests/drift-gate.mjs` fails if any skill's prose names a project-specific referent, if the router omits a shipped skill or routes to one that does not exist, if a bundled reference file is never named by its `SKILL.md` (the model is handed a base directory, not a listing — an unnamed file is unreachable), if the loop diagram omits a shipped skill or names one that is gone, or if a description exceeds the length at which catalogs truncate it. Run `node tests/drift-gate.mjs --self-test` to watch it reject 22 planted defects; a gate not shown to fail is not a gate.
 
 ## The always-on router, and why its justification did not survive
 

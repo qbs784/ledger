@@ -201,7 +201,7 @@ That is what an eval is for. A rubric score of +1.71 would have been a pleasant 
 
 - **One judge model, one agent model.** A different judge may weigh attribution differently. Nothing here is cross-validated.
 - **Sixteen pairs.** The between-batch spread is wider than the pooled difference's standard error suggests is comfortable.
-- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the sixteen long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
+- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the twenty long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
 - **The judge never ran anything.** It graded correctness against source it was shown, so a claim that is wrong in a way the source does not reveal scores as right.
 
 ## Grading an output style needs a judge, not a pattern

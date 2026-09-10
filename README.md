@@ -87,7 +87,7 @@ Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
 
 ## The rest of the pack
 
-`/ledger:receipts` is the front door. Behind it are sixteen skills for the failures that only show up over a long horizon: prose that stops describing the code, rules that go unenforced, dead surface nobody can prove is dead. Type `/ledger:using-ledger` for the map, or reach for one directly.
+`/ledger:receipts` is the front door. Behind it are twenty skills for the failures that only show up over a long horizon: prose that stops describing the code, rules that go unenforced, dead surface nobody can prove is dead. Type `/ledger:using-ledger` for the map, or reach for one directly.
 
 | Skill | Reach for it when |
 |---|---|
@@ -113,11 +113,11 @@ Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
 | `pushing-safely` | pushing, force-pushing, or checking whether it landed |
 | `recording-ui-evidence` | recording a UI demo as visual evidence |
 
-![Where each skill sits in one iteration: an entry router, five numbered stages from set-up through curation, and two skills that apply at every stage.](assets/loop.svg)
+![Where each skill sits in one iteration: an entry router, six numbered stages from qualifying a request through curation, and two skills that apply at every stage.](assets/loop.svg)
 
 ## The seven rules
 
-These sit under all sixteen. The longer argument is in [docs/method.md](docs/method.md).
+These sit under all twenty. The longer argument is in [docs/method.md](docs/method.md).
 
 1. **Narrowest sufficient evidence.** Run the check that would actually fail. Never the full suite by reflex.
 2. **Never fake a green.** No suppressing empty results, no lowered thresholds, no narrowed scope to hide a file.

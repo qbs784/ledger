@@ -1,6 +1,6 @@
 {
   "name": "ledger",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The engineering ledger for agent-authored codebases: documentation as substrate, evidence over self-report, and rot resistance as a build requirement. Extracted from a running agent-authored codebase.",
   "author": {
     "name": "qbs784",

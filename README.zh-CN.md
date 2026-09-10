@@ -87,7 +87,7 @@ claude plugin install ledger@ledger
 
 ## 包里其余的部分
 
-`/ledger:receipts` 是前门。它后面是十六个 skill，针对的是只在长周期里才现形的那些失败：散文不再描述代码、规则无人执行、死掉的代码面没人能证明它已经死了。输入 `/ledger:using-ledger` 看地图，或者直接点用某一个。
+`/ledger:receipts` 是前门。它后面是二十个 skill，针对的是只在长周期里才现形的那些失败：散文不再描述代码、规则无人执行、死掉的代码面没人能证明它已经死了。输入 `/ledger:using-ledger` 看地图，或者直接点用某一个。
 
 | Skill | 什么时候用它 |
 |---|---|
@@ -113,11 +113,11 @@ claude plugin install ledger@ledger
 | `pushing-safely` | push、force-push，或确认某个东西是否真的落地 |
 | `recording-ui-evidence` | 录一段 UI 演示作为视觉证据 |
 
-![每个 skill 在一次迭代中的位置：一个入口路由、从初始配置到记录整理的五个编号阶段，以及两个在每个阶段都适用的 skill。](assets/loop.svg)
+![每个 skill 在一次迭代中的位置：一个入口路由、从需求立项到记录整理的六个编号阶段，以及两个在每个阶段都适用的 skill。](assets/loop.svg)
 
 ## 七条规则
 
-这七条压在全部十六个 skill 底下。更长的论证在 [docs/method.md](docs/method.md)。
+这七条压在全部二十个 skill 底下。更长的论证在 [docs/method.md](docs/method.md)。
 
 1. **最窄的充分证据。** 跑那个真的会失败的检查。永远不要条件反射地跑全量。
 2. **绝不伪造绿灯。** 不许压制空结果、不许降低阈值、不许缩小范围来藏掉一个文件。
