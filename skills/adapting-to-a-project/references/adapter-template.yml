@@ -87,6 +87,24 @@ records:
   # project's own checks reject.
   required_sections: []
 
+# Figures derived from THIS project's own agent session logs. Copying another
+# project's numbers produces a budget for someone else's repository, which is
+# worse than having none: it reads as measured. Read by: planning-the-work.
+execution:
+  # The number of turns at which handing a unit to a fresh worker costs less
+  # than running it on the main line. Below it, keep the unit inline; at or
+  # above it, delegate. Derive it — do not adopt one.
+  worker_break_even_turns: null
+
+  # The context size past which a unit is no longer safe to merge with another.
+  # A run that crosses it gets interrupted and finished by a second worker,
+  # which costs more than merging saved.
+  context_ceiling: null
+
+  # The command that reads this project's session logs and reports the two
+  # figures above. Null until someone has worked it out here.
+  cost_report: null
+
 # Intentional designs a removal proposal must out-argue rather than discover.
 # Each entry names the design and why it looks removable but is not. This is the
 # list that stops a confident wrong deletion, and it is the one thing here that

@@ -321,6 +321,62 @@ const CONTROLS = {
       ],
     },
   },
+  'unit-table-unsettled': {
+    'names the two units that edit the same function': {
+      positives: [
+        {
+          label: 'names the collision and what it forces',
+          text: 'Not yet. U2 and U4 both rewrite formatRow, so although nothing orders them they collide — two workers editing one function in the same wave. Serialise them, or give one of them ownership of the file. The plan also says nothing about where each unit runs or what verifier would fail.',
+        },
+        {
+          label: 'states it from the function outward',
+          text: 'formatRow is the hot spot: the dialect work and the locale work both land inside it, so those two cannot run in parallel no matter what the dependency list says.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'restates the plan and starts',
+          text: 'Looks reasonable. U1 first, then U2, U3 and U4 in parallel, then U5 to wire the flags. Starting on U1 now — extracting formatRow into src/format-row.mjs unchanged.',
+        },
+        {
+          label: 'notices missing columns but not the collision',
+          text: 'The plan does not say where each unit runs or what verifies each one. I would add those columns before starting. The ordering itself looks fine.',
+        },
+        {
+          label: 'names the units without the collision',
+          text: 'U2 and U4 both add options, and neither depends on the other, so they are fine to run together after U1 lands.',
+        },
+      ],
+    },
+  },
+  'unit-exit-gate': {
+    'names a gate part that has not run': {
+      positives: [
+        {
+          label: 'counts the gate parts',
+          text: 'No. The gate for this batch has four parts and one of them has run. Nobody independent has reviewed the diff, the documentation has not been checked against the behaviour, and there is no decision log to read against the approach.',
+        },
+        {
+          label: 'names the documentation part specifically',
+          text: 'Hold it. The documentation check has not been done, and it is the one that matters here: retention.md promises records are purged.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'says yes on the strength of green tests',
+          text: 'Yes — the tests pass and the implementation matches what U3 describes. Go ahead and start U4.',
+        },
+        {
+          label: 'catches the doc mismatch and still calls it done',
+          text: 'One thing: retention.md says records are purged but sweep only sets archived: true. Fix the wording in the doc, then mark U3 done and move on.',
+        },
+        {
+          label: 'generic pre-merge advice',
+          text: 'Before marking anything done you should run the full suite, check lint and types, and review the diff yourself for anything obviously wrong.',
+        },
+      ],
+    },
+  },
   'narrow-check-selection': {
     'names the narrow lane rather than the suite': {
       positives: [

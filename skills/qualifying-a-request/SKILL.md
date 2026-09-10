@@ -85,6 +85,13 @@ what was chosen, and not what was rejected and why, is half a record.
 | "They asked for it, so the value question is answered." | A request names a solution. The four questions ask what it is a solution *to*, and the answer regularly changes the solution. |
 | "It grew, but re-qualifying now wastes the work already done." | Sunk work is not evidence about the tier. Work done under the wrong tier is the cost you are trying to stop adding to. |
 
+## Where this hands off
+
+A qualified request is not a plan. Turning an approved approach into units,
+with their order, their dependencies and where each runs, is
+`ledger:planning-the-work`. Carrying one of those units to done is
+`ledger:running-a-bounded-loop`.
+
 ## Report
 
 State the tier and which test decided it. For a full intake: the four answers

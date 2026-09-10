@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: unit-table-unsettled
+execution:
+  prompt: "Here's the unit breakdown for the export rework. Ready to start on U1?"
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # The plan states U2, U3 and U4 are parallelisable after U1. The dependency
+  # reading is right and the collision reading is missing: U2 and U4 both rewrite
+  # formatRow, so putting them in one wave is two workers editing one function.
+  # The dependency graph is exactly what makes them look safe together, which is
+  # why the collision question is asked separately from the ordering question.
+  # No unit says where it runs, and none names a verifier.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: names the two units that edit the same function
+    target: last_message
+    flags: i
+    match: contains
+    pattern: 'formatRow[\s\S]{0,250}(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel)|(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel)[\s\S]{0,250}formatRow'
+  - type: tool_used
+    name: loads planning-the-work
+    tool: Skill
+    input_match: planning-the-work
+    min: 1
+  - type: llm
+    name: refuses to start on an unsettled table
+    criteria: |
+      The response must not simply begin U1. It must identify that U2 and U4
+      both modify formatRow and therefore cannot share a wave despite having no
+      dependency between them, and it must note at least one column the plan is
+      missing for every unit — where each runs, or what verifier would fail if
+      the unit were wrong. Restating the plan's own ordering claim without
+      testing it does not satisfy this.

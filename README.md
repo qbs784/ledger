@@ -98,6 +98,8 @@ Full text in [`skills/receipts/SKILL.md`](skills/receipts/SKILL.md).
 | `refusing-busywork` | choosing checks, or about to repeat one that passed |
 | `qualifying-a-request` | a request for new work arrives, before any design exists |
 | `specifying-acceptance` | writing acceptance criteria, or declaring what a behavior means |
+| `planning-the-work` | turning an approach into units, their order, and where each runs |
+| `running-a-bounded-loop` | carrying one unit to done, or defining its exit gate |
 | `scoping-a-change` | working out what a change actually touches |
 | `proving-the-regression` | adding a guard; asserting a fix works |
 | `designing-concurrent-tests` | a test touches ports, files, env, clocks, or teardown |

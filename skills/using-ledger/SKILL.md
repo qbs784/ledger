@@ -57,6 +57,8 @@ change lands with nothing behind it.
 | choosing which checks to run, or about to repeat one that passed | `refusing-busywork` |
 | handed a request for new work, before any design or plan exists for it | `qualifying-a-request` |
 | writing or reviewing acceptance criteria, exit conditions, or what a behavior means | `specifying-acceptance` |
+| turning an approved approach into units, their order, and where each runs | `planning-the-work` |
+| carrying one unit to done, or deciding what its exit gate must contain | `running-a-bounded-loop` |
 | working out what a change actually touches | `scoping-a-change` |
 | adding a guard, rule, or validator; asserting a fix works | `proving-the-regression` |
 | writing or reviewing a test that touches ports, files, env, clocks, or teardown | `designing-concurrent-tests` |
