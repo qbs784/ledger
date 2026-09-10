@@ -44,16 +44,16 @@ Added with the front-half skills and run on `sonnet`, isolated, router shipped �
 the optimistic arm. Twelve billed runs per round, $4.5 across the four rounds.
 Route is display-only; outcome is the primary check.
 
-| | R1 | R2 | R3 | R4 | what changed before it |
-|---|---|---|---|---|---|
-| `planning-the-work` route | **0/3** | 3/3 | 3/3 | — | description trigger rewritten |
-| `planning-the-work` outcome | 0/2 | 1/3 | **3/3** | — | "find the plan before asking for it" |
-| `specifying-acceptance` route | 1/3 | 3/3 | 2/3 | 2/3 | — |
-| `acceptance-as-adjective` outcome | 0/3 | 1/3 | 0/3 | **2/3** | grader widened; "find the criteria before asking" |
-| `qualifying-a-request` route | 3/3 | 2/3 | 3/3 | — | — |
-| `qualifying-a-request` outcome | 3/3 | 2/3 | **3/3** | — | grader window widened |
-| `running-a-bounded-loop` route | 3/3 | 3/3 | 3/3 | — | — |
-| `unit-exit-gate` outcome | 2/3 | 3/3 | 2/3 | — | — |
+| | R1 | R2 | R3 | R4 | R5 | what changed before it |
+|---|---|---|---|---|---|---|
+| `planning-the-work` route | **0/3** | 3/3 | 3/3 | — | — | description trigger rewritten |
+| `planning-the-work` outcome | 0/2 | 1/3 | **3/3** | — | — | "find the plan before asking for it" |
+| `specifying-acceptance` route | 1/3 | 3/3 | 2/3 | 2/3 | **3/3** | shell isolated in R5 |
+| `acceptance-as-adjective` outcome | 0/3 | 1/3 | 0/3 | 2/3 | **3/3** | grader widened; "find the criteria before asking"; shell isolated |
+| `qualifying-a-request` route | 3/3 | 2/3 | 3/3 | — | — | — |
+| `qualifying-a-request` outcome | 3/3 | 2/3 | **3/3** | — | — | grader window widened |
+| `running-a-bounded-loop` route | 3/3 | 3/3 | 3/3 | — | — | — |
+| `unit-exit-gate` outcome | 2/3 | 3/3 | 2/3 | — | — | — |
 
 **The finding that paid for the board.** `planning-the-work` shipped with a
 description that never fired: 0 of 3, with `running-a-bounded-loop` loading in
@@ -79,12 +79,31 @@ two long, substantive answers that named the ambiguity abstractly and never
 read the implementation to find which reading it had already taken. That is a
 weaker answer, not a narrow grader, and the score stands.
 
-**A local contaminant worth naming.** In 4 of the 12 runs of
+**A local contaminant, since closed.** In 4 of the first 12 runs of
 `acceptance-as-adjective`, `ls -la` returned empty output with exit 0 — the
-operator's shell aliased `ls` to a replacement that produced nothing — and the
+operator's shell aliased `ls` to a replacement that printed nothing — and the
 model concluded the directory was empty. It held four files. This is the
 failure `receipts` rule 6 exists for, arriving from the environment rather than
-the model, and it makes those runs uninterpretable rather than failing.
+the model, and it made those runs uninterpretable rather than failed.
+
+Every one of that case's four route misses across R1-R4 was one of those runs;
+conditioned on the fixture having been observed at all, the route was 8 for 8.
+R5 ran with the shell isolated and the classifier armed, and the case came back
+3/3 on both graders with no run excused — so the description was never the weak
+part, and the board that suggested otherwise was measuring the operator's shell.
+
+Two things now stop that recurring, and the order matters. The load-bearing one
+is a **positive control in the preflight**: before anything is billed, list a
+directory known to hold files, through the shell a run will actually get, and
+compare against a direct read. A blank reading with files present arms a
+classifier that reports affected runs as uninterpretable instead of failed —
+deliberately keyed on that measured fact rather than on the wording of a tool
+result, which is one runtime's string and would rot. The second is
+best-effort: isolated mode now points the shell at an empty startup directory,
+closing a leak in the isolation it already claimed, since `--setting-sources ""`
+strips the operator's skills and plugins while their shell configuration came
+through the same seam. `--real-environment` leaves it, because there the
+operator's shell is part of the stage.
 
 ## Three axes, not one
 
