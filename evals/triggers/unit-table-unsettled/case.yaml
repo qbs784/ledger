@@ -19,7 +19,7 @@ graders:
     target: last_message
     flags: i
     match: contains
-    pattern: 'formatRow[\s\S]{0,250}(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel)|(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel)[\s\S]{0,250}formatRow'
+    pattern: 'formatRow[\s\S]{0,250}(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel|both (modify|edit|rewrite|change|touch))|(collid|collision|conflict|same wave|serial|one at a time|cannot run in parallel|both (modify|edit|rewrite|change|touch))[\s\S]{0,250}formatRow|(U2|U4)[\s\S]{0,80}(U4|U2)[\s\S]{0,180}(same (function|file|module)|collid|conflict)'
   - type: tool_used
     name: loads planning-the-work
     tool: Skill

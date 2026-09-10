@@ -15,12 +15,17 @@ graders:
   # The grader does not ask for the word "tier". It asks whether the answer
   # connected the guarantee to its breaking, which is the judgement the tier
   # encodes. Pinned from both sides in tests/grader-controls.mjs.
+  #
+  # Widened once, after a recorded run stated the connection across about 380
+  # characters and called the result at-least-once delivery. The anchor stays
+  # narrow on purpose: accepting a bare "guarantee" would admit a negative
+  # control that guarantees something unrelated while using the break vocabulary.
   - type: regex
     name: connects the delivery guarantee to what retry breaks
     target: last_message
     flags: i
     match: contains
-    pattern: '(at-most-once|delivery guarantee)[\s\S]{0,240}(break|violat|invalidat|no longer|renegotiat|baseline)|(break|violat|invalidat|no longer|renegotiat|baseline)[\s\S]{0,240}(at-most-once|delivery guarantee)'
+    pattern: '(at-most-once|at-least-once|delivery guarantee)[\s\S]{0,400}(break|violat|invalidat|no longer|renegotiat|baseline)|(break|violat|invalidat|no longer|renegotiat|baseline)[\s\S]{0,400}(at-most-once|at-least-once|delivery guarantee)'
   - type: tool_used
     name: loads qualifying-a-request
     tool: Skill

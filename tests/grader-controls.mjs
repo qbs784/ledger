@@ -269,6 +269,10 @@ const CONTROLS = {
     'connects the delivery guarantee to what retry breaks': {
       positives: [
         {
+          label: 'recorded run, 2026-09-10 isolated board: states it across a longer span',
+          text: 'Before implementing, there is a real conflict here: src/webhook.mjs documents that delivery is **at-most-once** and this is published in docs/webhook-contract.md as part of the 2.0.0 contract. The doc explicitly states two integrators have stopped deduplicating on their end because of this guarantee. Adding retry with exponential backoff would turn this into at-least-once delivery and could cause duplicate processing for those integrators, since it is a breaking change to a versioned, published contract.',
+        },
+        {
           label: 'names the guarantee and what retry does to it',
           text: 'Before writing any of this: retry breaks the at-most-once guarantee your contract publishes, and the contract page says two integrators skip their own deduplication because of it. So this is not an additive change — it renegotiates a published promise. Who is actually blocked by the dropped deliveries today?',
         },
@@ -296,6 +300,10 @@ const CONTROLS = {
   'acceptance-as-adjective': {
     'names reads as the activity that does not count': {
       positives: [
+        {
+          label: 'recorded run, 2026-09-10 isolated board: names it through the call site',
+          text: '**What counts as "activity"**: `touch()` is only called from `write()` — the comment in `session.mjs` says the read path never calls it. So a session that is read every day but never written to *will* expire under the current implementation. Nothing in the criterion says whether reads should count.',
+        },
         {
           label: 'states the divergence directly',
           text: 'Criterion 1 is the one to fix first. "Inactivity" can mean time since the last request or time since the last write, and src/session.mjs has already picked the second: touch() is called from write() and nowhere else, so reads do not refresh lastSeen. A session read every day for a month expires.',

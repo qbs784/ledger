@@ -15,12 +15,19 @@ graders:
   #
   # The grader asks for the reading that separates them, not for the word
   # "ambiguous". Pinned from both sides in tests/grader-controls.mjs.
+  #
+  # Widened after a recorded run: the first pattern demanded that the negation be
+  # followed by update/touch/reset, and the run wrote "the read path never calls
+  # it" — a correct finding scored zero. The controls had not caught it because
+  # their positives were authored from the same vocabulary as the pattern, which
+  # is the tautology this pack names elsewhere. The first positive below is now
+  # the recorded run's own wording.
   - type: regex
     name: names reads as the activity that does not count
     target: last_message
     flags: i
     match: contains
-    pattern: '(read|reads|reading|get|fetch)[\s\S]{0,160}(do(es)?n.t|does not|do not|never|no longer|fails? to)[\s\S]{0,80}(count|update|refresh|touch|extend|reset)|(only|just)[\s\S]{0,60}writes?[\s\S]{0,100}(count|update|refresh|touch|extend|reset)'
+    pattern: '(read\w*|get|fetch)[\s\S]{0,200}(do(es)?n.t|does not|do not|never|no longer|fails? to)[\s\S]{0,100}(count|update|refresh|touch|extend|reset|call|invoke|stamp|bump|advance)|(only|just)[\s\S]{0,80}writes?[\s\S]{0,120}(count|update|refresh|touch|extend|reset|call|invoke|stamp|bump|advance)|read[\s\S]{0,140}(every day|continuously|repeatedly|read-only)[\s\S]{0,140}expire'
   - type: tool_used
     name: loads specifying-acceptance
     tool: Skill
