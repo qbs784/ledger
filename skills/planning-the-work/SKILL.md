@@ -1,6 +1,6 @@
 ---
 name: planning-the-work
-description: Use when turning an approved approach into units of work; when a list of units exists but nothing says what each depends on, which run together, or where each one runs; or when deciding whether to merge, split, or demote units before any of them start. DO NOT invoke to decide whether the work is worth doing at all — route that to ledger:qualifying-a-request. DO NOT invoke to carry one unit through to done — route that to ledger:running-a-bounded-loop.
+description: Use when a plan, unit breakdown, task list, or milestone list is in hand and work is about to start against it — including when asked whether to begin the first unit. Also use when turning an approved approach into units. DO NOT invoke to decide whether the work is worth doing at all — route that to ledger:qualifying-a-request. DO NOT invoke once a unit is underway and the question is whether it is finished — route that to ledger:running-a-bounded-loop.
 license: MIT
 ---
 
@@ -13,6 +13,17 @@ sized well, ordered by nothing, each started wherever the last one finished.
 This skill owns one artifact — **the table** — and the criterion for it being
 settled. It does not run a unit, and it does not decide whether the work
 should exist.
+
+## Find the plan before asking for it
+
+A request saying the breakdown is here almost always means it is in the
+repository — a plan document, a milestone list, an issue body — and the first
+move is to go and read it. Asking whoever sent you to paste what is already on
+disk spends their turn and reports an absence you never checked.
+
+If it genuinely is not there, say **where you looked** before saying it is
+missing. An unchecked absence and a real one read identically, and only one of
+them is a finding.
 
 ## The table
 

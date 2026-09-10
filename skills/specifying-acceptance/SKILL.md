@@ -17,6 +17,23 @@ Acceptance written after the fact describes what was built. Acceptance written
 before is the only version that can reject anything, which is why the form
 matters more here than anywhere else in the change.
 
+## Find the criteria before asking for them
+
+A message saying the criteria are here almost always means they are in the
+repository — a requirements document, an issue, a design note — and the first
+move is to go and read them. Asking whoever sent you to paste what is already
+on disk spends their turn and reports an absence you never checked.
+
+The same applies to the code the criteria describe. A criterion's nearest
+wrong reading is usually **already resolved in the implementation**, silently
+and in one direction; you cannot see which until you read it. Naming the
+ambiguity without checking what the code already chose is the weaker half of
+the finding.
+
+If a listing comes back empty, that is a claim like any other: confirm it with
+a second command that would have matched something, and say where you looked
+before saying nothing is there.
+
 ## The form
 
 Three parts, and a criterion missing any one of them cannot be tested:
