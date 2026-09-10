@@ -23,6 +23,10 @@ There is one case per **model-invocable** skill — the drift gate fails if such
 | `retiring-a-decision-record` | refuses age and count as the criterion *(regex)* | `curating-decision-records` | `proving-code-is-dead` | files |
 | `reviewing-a-diff` | review names the cache-before-confirm defect *(regex)* | `reviewing-as-cis-complement` | — | git |
 | `shorten-a-readme` | identifies the repeated presentation rather than only cutting length *(regex)* | `writing-complete-propositions` | `trimming-session-vantage` | files |
+| `qualifying-a-request` | connects the published guarantee to what the request breaks *(regex)* | `qualifying-a-request` | — | files |
+| `acceptance-as-adjective` | names reads as the activity that does not count *(regex)* | `specifying-acceptance` | — | files |
+| `unit-table-unsettled` | names the two units that edit the same function *(regex)* | `planning-the-work` | — | files |
+| `unit-exit-gate` | names a gate part that has not run *(regex)* | `running-a-bounded-loop` | — | files |
 
 Every case carries an outcome grader as its **primary** check, because the runner excludes a `tool_used: Skill` grader for the plugin under test from the score in both arms. The route column is therefore reported, never scored — it answers "which skill did this", not "did it work". Three cases also carry a **near-miss negative**: a sibling that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
 
@@ -33,6 +37,54 @@ Run them from the repository root:
 ```sh
 claude plugin eval . --no-publish
 ```
+
+## The four lifecycle cases, measured four times
+
+Added with the front-half skills and run on `sonnet`, isolated, router shipped —
+the optimistic arm. Twelve billed runs per round, $4.5 across the four rounds.
+Route is display-only; outcome is the primary check.
+
+| | R1 | R2 | R3 | R4 | what changed before it |
+|---|---|---|---|---|---|
+| `planning-the-work` route | **0/3** | 3/3 | 3/3 | — | description trigger rewritten |
+| `planning-the-work` outcome | 0/2 | 1/3 | **3/3** | — | "find the plan before asking for it" |
+| `specifying-acceptance` route | 1/3 | 3/3 | 2/3 | 2/3 | — |
+| `acceptance-as-adjective` outcome | 0/3 | 1/3 | 0/3 | **2/3** | grader widened; "find the criteria before asking" |
+| `qualifying-a-request` route | 3/3 | 2/3 | 3/3 | — | — |
+| `qualifying-a-request` outcome | 3/3 | 2/3 | **3/3** | — | grader window widened |
+| `running-a-bounded-loop` route | 3/3 | 3/3 | 3/3 | — | — |
+| `unit-exit-gate` outcome | 2/3 | 3/3 | 2/3 | — | — |
+
+**The finding that paid for the board.** `planning-the-work` shipped with a
+description that never fired: 0 of 3, with `running-a-bounded-loop` loading in
+its place and writing a test plan for the first unit while the collision the
+case exists for went unmentioned. The drift gate, the grader controls and all
+twenty-two planted defects were green throughout. The cause was a trigger
+condition the model cannot evaluate at trigger time — "a list of units exists
+but nothing says what each depends on" is a property of the artifact, readable
+only after the routing decision. Rewritten to a property of the request
+instead, it went to 3/3 and stayed there.
+
+**Two graders were measuring phrasing, not findings.** Both were widened after
+a recorded run stated the finding in words the pattern did not carry — one
+demanded a negation followed by update/touch/reset where the run wrote "the
+read path never calls it", the other allowed 240 characters where the run took
+about 380. Their controls had passed because the positives were authored from
+the same vocabulary as the patterns, which is the tautology this pack names in
+`ledger:proving-the-regression`'s guardrail catalog. Every widened grader now
+carries the recorded run's own wording as its first positive.
+
+**One grader was not widened.** `acceptance-as-adjective` scored 1/3 in R2 with
+two long, substantive answers that named the ambiguity abstractly and never
+read the implementation to find which reading it had already taken. That is a
+weaker answer, not a narrow grader, and the score stands.
+
+**A local contaminant worth naming.** In 4 of the 12 runs of
+`acceptance-as-adjective`, `ls -la` returned empty output with exit 0 — the
+operator's shell aliased `ls` to a replacement that produced nothing — and the
+model concluded the directory was empty. It held four files. This is the
+failure `receipts` rule 6 exists for, arriving from the environment rather than
+the model, and it makes those runs uninterpretable rather than failing.
 
 ## Three axes, not one
 
