@@ -54,6 +54,23 @@ const REAL_ENV = args.includes('--real-environment')
 // points the run at a copy of the pack with `hooks/` removed — the only way to
 // get a baseline now that the injection is on by default.
 const NO_ROUTER = args.includes('--no-router')
+// Set by the preflight's positive control on the operator's shell. Read by the
+// corrupted-observation classifier; false means no run gets excused.
+let shellListingBroken = false
+let quietShellDir
+
+/**
+ * The shell environment a run is given, so the preflight control can probe the
+ * same shell the model will get rather than a different one. Probing the
+ * operator's shell while the runs get a quiet one would excuse runs whose shell
+ * was fine — an exclusion rule aimed at the wrong population, which is worse
+ * than none because it silently shrinks denominators.
+ */
+function quietShellEnv() {
+  if (REAL_ENV) return {}
+  if (quietShellDir === undefined) quietShellDir = mkdtempSync(join(tmpdir(), 'ledger-quiet-shell-'))
+  return { ZDOTDIR: quietShellDir }
+}
 // Repeatable. Reading only the first occurrence would silently ignore the rest,
 // which is how a two-case re-run measured one case and reported nothing about
 // the other.
@@ -147,8 +164,40 @@ const bareSkill = value => (typeof value === 'string' ? value.split(':').pop() :
  * did. Scan every assistant event and every block, because one model message is
  * split across several events.
  */
-function readStream(text) {
+/** A command whose first word is a directory listing. */
+const LISTING = /^\s*(?:[\w./-]*\/)?(ls|eza|exa|lsd|tree|dir)\b/
+
+/**
+ * Whether a run's view of its fixture was corrupted rather than merely poor.
+ *
+ * A listing that returns nothing and an empty directory are the same output,
+ * which is the failure `receipts` rule 6 names. It is not hypothetical here:
+ * four runs of one case reported a four-file fixture as an empty directory,
+ * because the operator's shell aliased `ls` to a replacement that printed
+ * nothing and exited 0.
+ *
+ * The judgement deliberately rests on a fact measured before the board rather
+ * than on the wording of a tool result — the wording is one runtime's string
+ * and would rot. So this fires only when the preflight has independently
+ * confirmed the shell's listing is broken, the fixture really did hold files,
+ * the run listed, and it never looked at the tree any other way. A run that
+ * listed and then read a file has a sound observation whatever the listing did.
+ *
+ * Returns the offending command, or null when the run is interpretable.
+ */
+export function blindObservation({ listings = [], readFiles = false }, filesPresent, shellListingBroken) {
+  if (!shellListingBroken) return null
+  if (!(filesPresent > 0)) return null
+  if (readFiles) return null
+  const listing = listings.find(entry => !entry.isError)
+  return listing === undefined ? null : listing.command
+}
+
+export function readStream(text) {
   const calls = new Map()
+  const listings = []
+  let readFiles = false
+  const pending = new Map()
   let unparseable = 0
   let hooks = 0
   let init
@@ -175,6 +224,17 @@ function readStream(text) {
         if (block.type === 'text' && block.text) traceParts.push(block.text)
         if (block.type === 'tool_use') {
           traceParts.push(`${block.name} ${JSON.stringify(block.input ?? {})}`)
+          // Two things the corrupted-observation classifier needs: whether the
+          // run ever listed a directory, and whether it looked at the tree any
+          // other way. A listing is the call that returns nothing when the
+          // operator's shell is broken; a Read or a Glob is the second opinion
+          // that makes the run's observation sound anyway.
+          if (block.name === 'Bash' && LISTING.test(String(block.input?.command ?? ''))) {
+            pending.set(block.id, String(block.input.command))
+          }
+          if (block.name === 'Read' || block.name === 'Glob' || block.name === 'Grep') {
+            pending.set(block.id, null)
+          }
           if (block.name === 'Skill') {
             calls.set(block.id, { skill: bareSkill(block.input?.skill), raw: block.input, loaded: undefined })
           }
@@ -186,6 +246,11 @@ function readStream(text) {
         if (block.type === 'tool_result' && calls.has(block.tool_use_id)) {
           calls.get(block.tool_use_id).loaded = block.is_error !== true
         }
+        if (block.type === 'tool_result' && pending.has(block.tool_use_id)) {
+          const command = pending.get(block.tool_use_id)
+          if (command === null) { if (block.is_error !== true) readFiles = true }
+          else listings.push({ command, isError: block.is_error === true })
+        }
       }
     }
   }
@@ -196,6 +261,7 @@ function readStream(text) {
   const lastMessage = typeof result?.result === 'string' ? result.result : ''
   return {
     calls: [...calls.values()],
+    listings, readFiles,
     unparseable, hooks, init, result, routerInjected,
     targets: { last_message: lastMessage, trace: traceParts.join('\n'), files: '' },
   }
@@ -511,6 +577,16 @@ function runCase(testCase, capturesDir, suffix = '') {
   for (const key of ['HOME', 'PATH', 'TERM', 'LANG', 'SHELL', 'USER', 'ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN']) {
     if (process.env[key] !== undefined) env[key] = process.env[key]
   }
+  // Isolated mode already claims to strip the operator's own configuration, and
+  // `--setting-sources ""` does that for skills, plugins and MCP servers. Their
+  // shell configuration leaks through the same seam: the model's Bash tool
+  // starts a shell from the operator's profile, so an alias there changes what
+  // the model observes. Pointing the shell at an empty startup directory closes
+  // it — verified for zsh, which honours ZDOTDIR. It is best-effort by nature:
+  // another shell reads another file, which is why the positive control in the
+  // preflight is what the board actually relies on. In --real-environment the
+  // operator's shell is part of the stage under test and stays.
+  Object.assign(env, quietShellEnv())
   const droppedBaseUrl = process.env.ANTHROPIC_BASE_URL !== undefined
 
   return new Promise(resolvePromise => {
@@ -535,7 +611,7 @@ function runCase(testCase, capturesDir, suffix = '') {
       const existing = new Set(before)
       const created = listFiles(cwd).filter(path => !existing.has(path)).sort()
       if (!KEEP_TEMP) rmSync(cwd, { recursive: true, force: true })
-      resolvePromise({ code, out, err, streamPath, droppedBaseUrl, cwd, created })
+      resolvePromise({ code, out, err, streamPath, droppedBaseUrl, cwd, created, fixtureFiles: before.length })
     })
   })
 }
@@ -547,9 +623,10 @@ function runCase(testCase, capturesDir, suffix = '') {
 // would otherwise run the whole suite. That is not hypothetical; it happened.
 
 if (import.meta.url !== `file://${process.argv[1]}`) {
-  // Imported rather than executed: run nothing. `parseCase` and
-  // `scoreRegexGrader` are exported on purpose, so tests/grader-controls.mjs
-  // exercises the scorer this harness actually uses rather than a copy of it.
+  // Imported rather than executed: run nothing. `parseCase`, `scoreRegexGrader`,
+  // `readStream` and `blindObservation` are exported on purpose, so the tests
+  // exercise the parser and scorer this harness actually uses rather than a
+  // copy of them.
 } else {
 
 const caseNames = existsSync(CASES_DIR)
@@ -630,6 +707,54 @@ if (!DRY_RUN) {
     process.exit(2)
   }
   console.log(`preflight: session reachable (${JSON.stringify(String(verdict.result).trim().slice(0, 20))})`)
+
+}
+// A positive control on the operator's shell, run before anything is billed.
+//
+// In several cases the model's first move is to list the working directory, and
+// a listing that prints nothing is the same output as an empty directory. That
+// is not a hypothetical: on the machine this corpus was first measured on, `ls`
+// was aliased to a replacement that printed nothing and exited 0, and four runs
+// of one case reported a four-file fixture as empty — a false observation the
+// answer was then shaped around, which is worse than an unshaped one because it
+// reads as credible.
+//
+// So: list a directory known to hold files, through the same profile-loading
+// shell the model's Bash tool gets, and check it against a direct read. A blank
+// reading with files present means the instrument is broken, not the fixture.
+{
+  const probeDir = mkdtempSync(join(tmpdir(), 'ledger-ls-control-'))
+  writeFileSync(join(probeDir, 'one.txt'), 'x')
+  writeFileSync(join(probeDir, 'two.txt'), 'y')
+  const shell = process.env.SHELL
+  const present = readdirSync(probeDir).length
+  const listing = extraEnv => String(spawnSync(shell, ['-ic', 'ls -la'], {
+    cwd: probeDir, encoding: 'utf8', timeout: 15000, env: { ...process.env, ...extraEnv },
+  }).stdout ?? '').trim()
+
+  if (shell === undefined) {
+    console.log('preflight: no SHELL set — the listing control was not run')
+  } else {
+    const asRunsGetIt = listing(quietShellEnv())
+    if (present > 0 && asRunsGetIt === '') {
+      shellListingBroken = true
+      console.log(`preflight: LISTING CONTROL FAILED — \`ls -la\` printed nothing in a directory holding ${present} file(s).`)
+      console.log('           The model observes what this shell prints, so a run that only listed saw an empty')
+      console.log('           fixture. Such runs are reported as uninterpretable rather than failed. Fix the')
+      console.log('           shell (an alias or function shadowing `ls`) for an uncontaminated board.')
+    } else {
+      console.log(`preflight: listing control passed (${present} file(s) visible to a run)`)
+      // Diagnostic only. When the operator's own shell would have broken the
+      // reading and the isolation suppressed it, that is worth knowing: the same
+      // alias is live in every ordinary session on this machine, and
+      // --real-environment does not suppress it.
+      if (!REAL_ENV && listing({}) === '') {
+        console.log('           note: the operator\'s interactive shell prints nothing for this listing;')
+        console.log('           isolated mode suppressed it, and --real-environment would not.')
+      }
+    }
+  }
+  rmSync(probeDir, { recursive: true, force: true })
 }
 mkdirSync(capturesDir, { recursive: true })
 
@@ -710,6 +835,21 @@ for (const testCase of cases) {
     graderLines.push(`  INVALID  ${failedCount}/${runCount} run(s) never reached the model — the session itself failed: ${JSON.stringify(sample.slice(0, 90))}`)
   }
 
+  // A run whose only look at the tree was a listing the shell broke did not
+  // observe its fixture, so neither its answer nor its route has a subject: the
+  // model was never choosing about the thing the case is made of. Excluded from
+  // every grader, like a session that never reached the model, and reported so
+  // a reader does not take the gap for a weak description.
+  const blind = attempts.map(attempt => blindObservation(attempt.stream, attempt.outcome.fixtureFiles ?? 0, shellListingBroken))
+  const blindCount = blind.filter(Boolean).length
+  if (blindCount > 0) {
+    graderLines.push(`  note      ${blindCount}/${runCount} run(s) saw an empty fixture through a broken shell listing (${JSON.stringify(blind.find(Boolean))}) — uninterpretable, excluded from every grader`)
+    if (blindCount === runCount) {
+      caseState = 'INVALID'
+      graderLines.push('  INVALID  every run was blind; fix the shell before reading anything into this case')
+    }
+  }
+
   const truncated = attempts.map((attempt, index) => failedToRun[index] || attempt.stream.result?.subtype === 'error_max_turns' || attempt.stream.result?.subtype === 'error_max_budget_usd')
   const truncatedCount = truncated.filter(Boolean).length - failedCount
   if (truncatedCount > 0) {
@@ -730,7 +870,7 @@ for (const testCase of cases) {
     // answer, and no tool call either. A run cut off at a limit did reach the
     // model, so its route still counts — the Skill call happened before the cut
     // or it did not.
-    const scores = allScores.filter((_, index) => !failedToRun[index] && !(answerShaped && truncated[index]))
+    const scores = allScores.filter((_, index) => !failedToRun[index] && !blind[index] && !(answerShaped && truncated[index]))
     if (scores.length === 0) {
       graderLines.push(`  UNSCORED      ${grader.name ?? grader.type}  every run was truncated before an answer`)
       unscored = true

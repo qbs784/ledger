@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: stale-verified-claims
+execution:
+  prompt: "Quarterly sweep. Is our verified list still accurate?"
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # Three entries, one per staleness form. FR-11 is the signature one: its
+  # provenance is stamped 2026-03-02 and the file it covers records a rework on
+  # 2026-07-14, so the recorded pass predates the behaviour it claims to
+  # verify — a green about code that no longer exists. FR-12 points at a symbol
+  # the change log says was removed. FR-13 claims verified with no test and no
+  # provenance at all.
+  #
+  # The grader asks for the date comparison, because that is the form a reading
+  # of the registry alone cannot produce. Pinned from both sides in
+  # tests/grader-controls.mjs.
+  - type: regex
+    name: finds the provenance that predates the code it covers
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(2026-07-14|changed after|newer than|predates|older than|out of date|stale green)[\s\S]{0,220}(2026-03-02|provenance|junit|report|artifact|last_verified|recorded pass|recorded run|recorded verification|last recorded)|(2026-03-02|provenance|junit|report|artifact|last_verified|recorded pass|recorded run|recorded verification|last recorded)[\s\S]{0,220}(2026-07-14|changed after|newer than|predates|older than|stale green)'
+  - type: tool_used
+    name: loads metabolizing-knowledge
+    tool: Skill
+    input_match: metabolizing-knowledge
+    min: 1
+  - type: llm
+    name: separates the three staleness forms
+    criteria: |
+      The response must not report the list as accurate. It must identify that
+      FR-11's recorded pass predates a documented change to the code it covers,
+      so its green says nothing about current behaviour. It should also flag
+      FR-12, whose impl reference names a symbol the change log says was
+      removed, and FR-13, which claims verified with no linked test and no
+      provenance. Treating all three as one undifferentiated "needs review"
+      does not satisfy this: they call for different work.

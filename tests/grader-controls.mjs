@@ -265,6 +265,190 @@ const CONTROLS = {
       ],
     },
   },
+  'qualifying-a-request': {
+    'connects the delivery guarantee to what retry breaks': {
+      positives: [
+        {
+          label: 'recorded run, 2026-09-10 isolated board: states it across a longer span',
+          text: 'Before implementing, there is a real conflict here: src/webhook.mjs documents that delivery is **at-most-once** and this is published in docs/webhook-contract.md as part of the 2.0.0 contract. The doc explicitly states two integrators have stopped deduplicating on their end because of this guarantee. Adding retry with exponential backoff would turn this into at-least-once delivery and could cause duplicate processing for those integrators, since it is a breaking change to a versioned, published contract.',
+        },
+        {
+          label: 'names the guarantee and what retry does to it',
+          text: 'Before writing any of this: retry breaks the at-most-once guarantee your contract publishes, and the contract page says two integrators skip their own deduplication because of it. So this is not an additive change — it renegotiates a published promise. Who is actually blocked by the dropped deliveries today?',
+        },
+        {
+          label: 'states it in the other order',
+          text: 'Adding a backoff loop means the at-most-once promise in docs/webhook-contract.md is no longer true, and consumers were told they could rely on it. Record the contract change as a decision first, and capture a baseline of current delivery behaviour before touching the sender.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'implements it and offers to update the docs afterwards',
+          text: 'Added an exponential backoff loop with three attempts and jitter in src/webhook.mjs, incrementing x-delivery-attempt each time. The docs mention at-most-once delivery, so I will update docs/webhook-contract.md to describe the new behaviour.',
+        },
+        {
+          label: 'pure implementation, no contract awareness',
+          text: 'Here is the retry wrapper: a for loop over three attempts with a doubling delay, returning on the first ok response. I kept the existing headers and added the attempt counter.',
+        },
+        {
+          label: 'uses the break vocabulary about something else',
+          text: 'This will not break anything. I will guarantee correctness by keeping the event id stable across attempts, and cap it at no longer than five retries.',
+        },
+      ],
+    },
+  },
+  'acceptance-as-adjective': {
+    'names reads as the activity that does not count': {
+      positives: [
+        {
+          label: 'recorded run, 2026-09-10 isolated board: names it through the call site',
+          text: '**What counts as "activity"**: `touch()` is only called from `write()` — the comment in `session.mjs` says the read path never calls it. So a session that is read every day but never written to *will* expire under the current implementation. Nothing in the criterion says whether reads should count.',
+        },
+        {
+          label: 'states the divergence directly',
+          text: 'Criterion 1 is the one to fix first. "Inactivity" can mean time since the last request or time since the last write, and src/session.mjs has already picked the second: touch() is called from write() and nowhere else, so reads do not refresh lastSeen. A session read every day for a month expires.',
+        },
+        {
+          label: 'states it from the write side',
+          text: 'As implemented, only writes reset the expiry clock, so the criterion as written does not describe the behaviour. Both tests drive the write path, so neither would go red if the wrong reading were the one you wanted.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'flags the adjectives but misses the ambiguity',
+          text: 'Criteria 2 and 3 are not testable — "securely" and "performant" have no thresholds. Criterion 1 and 4 look fine; 4 already names an observable response and an event.',
+        },
+        {
+          label: 'calls it ambiguous without naming what diverges',
+          text: 'Criterion 1 is a little ambiguous and could be tightened. I would restate it more precisely before implementing, and add a test for the boundary at exactly seven days.',
+        },
+        {
+          label: 'talks about reads without the divergence',
+          text: 'The read path returns the session object directly, which is fine. I will add a getter so callers do not reach into the map, and keep the expiry check where it is.',
+        },
+      ],
+    },
+  },
+  'unit-table-unsettled': {
+    'names the two units that edit the same function': {
+      positives: [
+        {
+          label: 'names the collision and what it forces',
+          text: 'Not yet. U2 and U4 both rewrite formatRow, so although nothing orders them they collide — two workers editing one function in the same wave. Serialise them, or give one of them ownership of the file. The plan also says nothing about where each unit runs or what verifier would fail.',
+        },
+        {
+          label: 'states it from the function outward',
+          text: 'formatRow is the hot spot: the dialect work and the locale work both land inside it, so those two cannot run in parallel no matter what the dependency list says.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'restates the plan and starts',
+          text: 'Looks reasonable. U1 first, then U2, U3 and U4 in parallel, then U5 to wire the flags. Starting on U1 now — extracting formatRow into src/format-row.mjs unchanged.',
+        },
+        {
+          label: 'notices missing columns but not the collision',
+          text: 'The plan does not say where each unit runs or what verifies each one. I would add those columns before starting. The ordering itself looks fine.',
+        },
+        {
+          label: 'names the units without the collision',
+          text: 'U2 and U4 both add options, and neither depends on the other, so they are fine to run together after U1 lands.',
+        },
+      ],
+    },
+  },
+  'unit-exit-gate': {
+    'names a gate part that has not run': {
+      positives: [
+        {
+          label: 'counts the gate parts',
+          text: 'No. The gate for this batch has four parts and one of them has run. Nobody independent has reviewed the diff, the documentation has not been checked against the behaviour, and there is no decision log to read against the approach.',
+        },
+        {
+          label: 'names the documentation part specifically',
+          text: 'Hold it. The documentation check has not been done, and it is the one that matters here: retention.md promises records are purged.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'says yes on the strength of green tests',
+          text: 'Yes — the tests pass and the implementation matches what U3 describes. Go ahead and start U4.',
+        },
+        {
+          label: 'catches the doc mismatch and still calls it done',
+          text: 'One thing: retention.md says records are purged but sweep only sets archived: true. Fix the wording in the doc, then mark U3 done and move on.',
+        },
+        {
+          label: 'generic pre-merge advice',
+          text: 'Before marking anything done you should run the full suite, check lint and types, and review the diff yourself for anything obviously wrong.',
+        },
+      ],
+    },
+  },
+  'scenario-through-the-back-door': {
+    'names the seeding step as why the suite proves nothing': {
+      positives: [
+        {
+          label: 'names the seeding call and what it decouples',
+          text: 'No. scenarios/run.mjs calls put() itself before driving the story, so the retrieval assertion is satisfied by the row the scenario wrote, not by anything createOrder did. Take that line out and the step fails — which is the honest state, because createOrder builds an order and returns it without ever persisting.',
+        },
+        {
+          label: 'states it from the create path',
+          text: 'The suite is green and the flow is broken: createOrder never calls put, so no order is stored on the path a customer takes. The scenario hides this by arranging the order directly in the store first.',
+        },
+        {
+          label: 'names it as a bypass without quoting the function',
+          text: 'This is not an accepted story. The scenario seeds its own state directly rather than going through the API, so the create path is never exercised at all — the only thing the green proves is that the assertion matches the value the scenario itself inserted.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'accepts on the green suite',
+          text: 'Yes — S1 place-and-retrieve passes and that is the stated acceptance condition in docs/acceptance.md. The checkout flow can be marked accepted.',
+        },
+        {
+          label: 'asks for more coverage without finding the defect',
+          text: 'One scenario is thin for a checkout flow. I would add cases for an empty cart, a declined payment, and a duplicate submission before accepting, and also run the suite against the compose stack rather than locally.',
+        },
+        {
+          label: 'discusses the store without the divergence',
+          text: 'The order store is an in-memory Map, so nothing survives a restart. put() and get() look fine for a single process; consider persisting to a real database before this goes anywhere near production.',
+        },
+      ],
+    },
+  },
+  'stale-verified-claims': {
+    'finds the provenance that predates the code it covers': {
+      positives: [
+        {
+          label: 'recorded run, 2026-09-10 isolated board: names the pass rather than the artifact',
+          text: 'No — all three entries in the verified list are stale, and I have downgraded them in docs/traceability.yml with reasons recorded. FR-11: Stale green — netOfDiscount was reworked 2026-07-14 (per-line-item discount vs. subtotal), after the recorded pass. FR-12: Referent moved — capRefund was deleted 2026-05-30. FR-13: was never linked to a test at all, yet recorded as verified from the start.',
+        },
+        {
+          label: 'compares the two dates',
+          text: 'FR-11 is not verified in any useful sense. Its provenance, reports/junit/pricing.xml, is stamped 2026-03-02, and src/pricing.mjs records netOfDiscount being reworked on 2026-07-14 — the recorded pass predates the behaviour it claims to cover, so it is a stale green. Re-run before reading anything into it.',
+        },
+        {
+          label: 'states it as the artifact being older',
+          text: 'The junit report for pricing is older than the change it is supposed to cover, so FR-11 needs re-running rather than trusting. Separately FR-12 points at capRefund, which the change log says moved into the ledger writer, and FR-13 claims verified with no test and no artifact at all.',
+        },
+      ],
+      negatives: [
+        {
+          label: 'reports the list as accurate',
+          text: 'The registry looks consistent. FR-11 and FR-12 are both verified with linked tests and provenance files present, and FR-13 is marked verified as well. Nothing needs changing this quarter.',
+        },
+        {
+          label: 'only counts the unlinked entry',
+          text: 'One problem: FR-13 has no test and no provenance, so it should not be marked verified. FR-11 and FR-12 both have artifacts on disk and look fine.',
+        },
+        {
+          label: 'flags the dates as merely old',
+          text: 'The last_verified dates are all several months back, so everything here is due for a refresh on age alone. I would re-run the whole registry quarterly regardless of what changed.',
+        },
+      ],
+    },
+  },
   'narrow-check-selection': {
     'names the narrow lane rather than the suite': {
       positives: [

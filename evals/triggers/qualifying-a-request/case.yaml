@@ -1,0 +1,43 @@
+schema_version: "1.0"
+name: qualifying-a-request
+execution:
+  prompt: "Let's add retry with exponential backoff to the webhook sender."
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # The fixture makes this a request that looks additive and is not: the published
+  # contract promises at-most-once delivery, and it says two integrators skip their
+  # own deduplication because of that promise. Retry is therefore tier 1 — an
+  # existing consumer contract has to survive it — and the answer that starts
+  # writing a backoff loop has classified it as tier 3 by how small it sounded.
+  #
+  # The grader does not ask for the word "tier". It asks whether the answer
+  # connected the guarantee to its breaking, which is the judgement the tier
+  # encodes. Pinned from both sides in tests/grader-controls.mjs.
+  #
+  # Widened once, after a recorded run stated the connection across about 380
+  # characters and called the result at-least-once delivery. The anchor stays
+  # narrow on purpose: accepting a bare "guarantee" would admit a negative
+  # control that guarantees something unrelated while using the break vocabulary.
+  - type: regex
+    name: connects the delivery guarantee to what retry breaks
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(at-most-once|at-least-once|delivery guarantee)[\s\S]{0,400}(break|violat|invalidat|no longer|renegotiat|baseline)|(break|violat|invalidat|no longer|renegotiat|baseline)[\s\S]{0,400}(at-most-once|at-least-once|delivery guarantee)'
+  - type: tool_used
+    name: loads qualifying-a-request
+    tool: Skill
+    input_match: qualifying-a-request
+    min: 1
+  - type: llm
+    name: qualifies the request rather than implementing it
+    criteria: |
+      The response must not present a retry implementation as the answer. It must
+      establish what the request is for — who is blocked, or what the smallest
+      version delivering value is — and it must identify that an existing published
+      guarantee is at stake, so this is not a free addition. Asking the user to
+      decide, or recording the contract change as a decision, both satisfy this.
+      An answer that writes the backoff loop and then notes the docs need updating
+      does not.

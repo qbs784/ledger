@@ -320,7 +320,7 @@ function checkAdapterKeys(root, skills) {
  */
 function checkAdvertisedDefectCount(root, plantedCount) {
   // Every README that states the number, in any language.
-  for (const file of ['README.md', 'README.zh-CN.md']) {
+  for (const file of ['README.md', 'README.zh-CN.md', 'docs/method.md']) {
     const path = join(root, file)
     if (!existsSync(path)) continue
     const text = readFileSync(path, 'utf8')
@@ -570,6 +570,37 @@ function checkAssetsReferenced(root) {
   }
 }
 
+/**
+ * The loop diagram is the only place a reader sees where a skill sits, and it is
+ * hand-written SVG that nothing else reads. CONTRIBUTING claimed this check
+ * existed before it did — the claim was true of intent and false of the tree,
+ * which is the exact drift this gate is for.
+ *
+ * receipts is exempt: it is an output style that holds for a whole iteration
+ * rather than a step inside one, so placing it in a numbered stage would be a
+ * false claim. Every other shipped skill appears, and nothing appears that is
+ * not shipped.
+ */
+const DIAGRAM_EXEMPT = new Set(['receipts'])
+
+function checkLoopDiagram(root, skills) {
+  const path = join(root, 'assets', 'loop.svg')
+  if (!existsSync(path)) return
+  const text = readFileSync(path, 'utf8')
+  // Only the monospace skill labels count. Reading every token would match CSS
+  // property names and hyphenated prose in the comment.
+  const named = new Set([...text.matchAll(/class="sk"[^>]*>([^<]+)</g)].map(match => match[1].trim()))
+  const shipped = new Set(skills.map(skill => skill.dirName))
+
+  for (const name of named) {
+    if (!shipped.has(name)) fail('assets/loop.svg', `names ${name}, which is not a shipped skill — a diagram that names a stale skill is a diagram that lies`)
+  }
+  for (const skill of skills) {
+    if (DIAGRAM_EXEMPT.has(skill.dirName)) continue
+    if (!named.has(skill.dirName)) fail('assets/loop.svg', `omits the shipped skill ${skill.dirName}, so a reader cannot see where it sits`)
+  }
+}
+
 function checkManifest(root, skills) {
   const manifestPath = join(root, '.claude-plugin', 'plugin.json')
   if (!existsSync(manifestPath)) {
@@ -635,6 +666,7 @@ function run(root) {
   checkDocumentedSkillTables(root, skills)
   checkTranslationPairing(root)
   checkAssetsReferenced(root)
+  checkLoopDiagram(root, skills)
   checkEvalCases(root, skills)
   checkAdvertisedDefectCount(root, plantedCases().length)
   return { skills, failures: [...failures] }
@@ -717,6 +749,14 @@ function plantedCases() {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
       writeFileSync(join(scratch, 'README.md'), '| Skill | When |\n|---|---|\n| `nothing-here` | never |\n')
     }],
+    ['loop diagram omitting a shipped skill', (skill, scratch) => {
+      writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
+      mkdirSync(join(scratch, 'assets'), { recursive: true })
+      // Referenced by a README whose skills table is complete, so the asset and
+      // table checks stay quiet and only the diagram check can reject this.
+      writeFileSync(join(scratch, 'assets', 'loop.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><text class="sk">not-a-shipped-skill</text></svg>')
+      writeFileSync(join(scratch, 'README.md'), '| Skill | When |\n|---|---|\n| `demo` | never |\n\n![diagram](assets/loop.svg)\n')
+    }],
     ['router that omits a shipped skill', (skill, scratch) => {
       writeFileSync(skill, frontmatter('demo') + '\nBody.\n')
       mkdirSync(join(scratch, 'skills', ROUTER), { recursive: true })
@@ -738,7 +778,12 @@ function selfTest() {
         .filter(entry => entry.isDirectory()).map(entry => `./skills/${entry.name}`)
       writeFileSync(join(scratch, '.claude-plugin', 'plugin.json'), JSON.stringify({ name: 'ledger', skills: present }, null, 2))
       const { failures: found } = run(scratch)
-      const relevant = found.filter(entry => !entry.includes('the router is missing'))
+      // Artifacts a one-skill scratch legitimately lacks. Filtering them is what
+      // makes a case prove its own check: without this, every planted defect was
+      // also 'rejected' by the missing adapter template, so a case whose check
+      // was broken would still have passed.
+      const NOISE = ['the router is missing', 'it is the adapter schema every other skill reads against']
+      const relevant = found.filter(entry => !NOISE.some(noise => entry.includes(noise)))
       if (relevant.length === 0) {
         console.error(`  self-test FAILED: the gate accepted a planted defect (${label})`)
       } else {

@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: unit-exit-gate
+execution:
+  prompt: "U3 is implemented and the tests pass. Can I mark it done and start U4?"
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # The unit's own gate lists four parts and exactly one of them has run. The
+  # other three are each independently damning here: no second reader has seen
+  # it; the documentation says records are purged while sweep only sets a flag
+  # and the store never shrinks; and no decision log exists to read against the
+  # approach. The passing test asserts a count of processed records, which is
+  # green under both the documented behaviour and the implemented one.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  - type: regex
+    name: names a gate part that has not run
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '(independent|second|fresh|separate)[\s\S]{0,80}(review|reader|eyes)|(review|documentation|docs|decision log)[\s\S]{0,110}(has ?n.t|have ?n.t|not been|not yet|no one|nobody|still|missing|outstanding)'
+  - type: tool_used
+    name: loads running-a-bounded-loop
+    tool: Skill
+    input_match: running-a-bounded-loop
+    min: 1
+  - type: llm
+    name: refuses done on one gate part out of four
+    criteria: |
+      The response must answer no, and must say so on the basis that the unit's
+      own exit gate has four parts of which only the deterministic checks have
+      run. Naming the documentation mismatch — the page says records are purged
+      while the implementation only sets an archived flag — strengthens it but
+      does not substitute for identifying that the gate is partly unrun. An
+      answer that says yes, or that treats the passing test as sufficient, fails.

@@ -23,6 +23,12 @@ There is one case per **model-invocable** skill — the drift gate fails if such
 | `retiring-a-decision-record` | refuses age and count as the criterion *(regex)* | `curating-decision-records` | `proving-code-is-dead` | files |
 | `reviewing-a-diff` | review names the cache-before-confirm defect *(regex)* | `reviewing-as-cis-complement` | — | git |
 | `shorten-a-readme` | identifies the repeated presentation rather than only cutting length *(regex)* | `writing-complete-propositions` | `trimming-session-vantage` | files |
+| `qualifying-a-request` | connects the published guarantee to what the request breaks *(regex)* | `qualifying-a-request` | — | files |
+| `acceptance-as-adjective` | names reads as the activity that does not count *(regex)* | `specifying-acceptance` | — | files |
+| `unit-table-unsettled` | names the two units that edit the same function *(regex)* | `planning-the-work` | — | files |
+| `unit-exit-gate` | names a gate part that has not run *(regex)* | `running-a-bounded-loop` | — | files |
+| `scenario-through-the-back-door` | names the seeding step as why the suite proves nothing *(regex)* | `validating-real-scenarios` | — | files |
+| `stale-verified-claims` | finds the provenance that predates the code it covers *(regex)* | `metabolizing-knowledge` | — | files |
 
 Every case carries an outcome grader as its **primary** check, because the runner excludes a `tool_used: Skill` grader for the plugin under test from the score in both arms. The route column is therefore reported, never scored — it answers "which skill did this", not "did it work". Three cases also carry a **near-miss negative**: a sibling that must *not* load, because the prompt sits just outside its boundary. Near-miss negatives are the ones that matter; an obviously-irrelevant negative passes for free and measures nothing.
 
@@ -33,6 +39,160 @@ Run them from the repository root:
 ```sh
 claude plugin eval . --no-publish
 ```
+
+## The four lifecycle cases, measured four times
+
+Added with the front-half skills and run on `sonnet`, isolated, router shipped —
+the optimistic arm. Twelve billed runs per round, $4.5 across the four rounds.
+Route is display-only; outcome is the primary check.
+
+| | R1 | R2 | R3 | R4 | R5 | what changed before it |
+|---|---|---|---|---|---|---|
+| `planning-the-work` route | **0/3** | 3/3 | 3/3 | — | — | description trigger rewritten |
+| `planning-the-work` outcome | 0/2 | 1/3 | **3/3** | — | — | "find the plan before asking for it" |
+| `specifying-acceptance` route | 1/3 | 3/3 | 2/3 | 2/3 | **3/3** | shell isolated in R5 |
+| `acceptance-as-adjective` outcome | 0/3 | 1/3 | 0/3 | 2/3 | **3/3** | grader widened; "find the criteria before asking"; shell isolated |
+| `qualifying-a-request` route | 3/3 | 2/3 | 3/3 | — | — | — |
+| `qualifying-a-request` outcome | 3/3 | 2/3 | **3/3** | — | — | grader window widened |
+| `running-a-bounded-loop` route | 3/3 | 3/3 | 3/3 | — | — | — |
+| `unit-exit-gate` outcome | 2/3 | 3/3 | 2/3 | — | — | — |
+
+**The finding that paid for the board.** `planning-the-work` shipped with a
+description that never fired: 0 of 3, with `running-a-bounded-loop` loading in
+its place and writing a test plan for the first unit while the collision the
+case exists for went unmentioned. The drift gate, the grader controls and all
+twenty-two planted defects were green throughout. The cause was a trigger
+condition the model cannot evaluate at trigger time — "a list of units exists
+but nothing says what each depends on" is a property of the artifact, readable
+only after the routing decision. Rewritten to a property of the request
+instead, it went to 3/3 and stayed there.
+
+**Two graders were measuring phrasing, not findings.** Both were widened after
+a recorded run stated the finding in words the pattern did not carry — one
+demanded a negation followed by update/touch/reset where the run wrote "the
+read path never calls it", the other allowed 240 characters where the run took
+about 380. Their controls had passed because the positives were authored from
+the same vocabulary as the patterns, which is the tautology this pack names in
+`ledger:proving-the-regression`'s guardrail catalog. Every widened grader now
+carries the recorded run's own wording as its first positive.
+
+**One grader was not widened.** `acceptance-as-adjective` scored 1/3 in R2 with
+two long, substantive answers that named the ambiguity abstractly and never
+read the implementation to find which reading it had already taken. That is a
+weaker answer, not a narrow grader, and the score stands.
+
+**A local contaminant, since closed.** In 4 of the first 12 runs of
+`acceptance-as-adjective`, `ls -la` returned empty output with exit 0 — the
+operator's shell aliased `ls` to a replacement that printed nothing — and the
+model concluded the directory was empty. It held four files. This is the
+failure `receipts` rule 6 exists for, arriving from the environment rather than
+the model, and it made those runs uninterpretable rather than failed.
+
+Every one of that case's four route misses across R1-R4 was one of those runs;
+conditioned on the fixture having been observed at all, the route was 8 for 8.
+R5 ran with the shell isolated and the classifier armed, and the case came back
+3/3 on both graders with no run excused — so the description was never the weak
+part, and the board that suggested otherwise was measuring the operator's shell.
+
+Two things now stop that recurring, and the order matters. The load-bearing one
+is a **positive control in the preflight**: before anything is billed, list a
+directory known to hold files, through the shell a run will actually get, and
+compare against a direct read. A blank reading with files present arms a
+classifier that reports affected runs as uninterpretable instead of failed —
+deliberately keyed on that measured fact rather than on the wording of a tool
+result, which is one runtime's string and would rot. The second is
+best-effort: isolated mode now points the shell at an empty startup directory,
+closing a leak in the isolation it already claimed, since `--setting-sources ""`
+strips the operator's skills and plugins while their shell configuration came
+through the same seam. `--real-environment` leaves it, because there the
+operator's shell is part of the stage.
+
+## The two recycling cases, and three defects they found in one sitting
+
+Added with the last two skills. Twelve billed runs, $1.76.
+
+| | first board | after | what changed |
+|---|---|---|---|
+| `metabolizing-knowledge` route | **3/3** | — | nothing; it fired first time |
+| `stale-verified-claims` outcome | 2/3 | 2/3 | skill stopped over-blocking; grader widened |
+| `validating-real-scenarios` route | 1/3 | **3/3** | the case's prompt, not the description |
+| `scenario-through-the-back-door` outcome | 2/3 | **3/3** | same prompt change |
+
+**The case was wrong, not the description.** `validating-real-scenarios` loaded
+once in three, and twice the model reached for `what-counts-as-evidence`
+instead — correctly. The prompt read "the scenario suite is green, can we call
+this accepted?", which is that sibling's territory, and this skill's own
+negative route sends the question there by name. Both mis-routed runs answered
+well, quoting the seeding call and the create path that never persists. Re-aimed
+at accepting against a real deployment — with the description untouched, so the
+next board would be attributable — it went to 3/3 on both graders and turns
+went from 4,3,10 to 11,11,11.
+
+**A skill that obeyed itself into doing nothing.** One run of
+`metabolizing-knowledge` produced 653 characters in 5 turns: no `.ledger.yml`
+existed, the skill said to stop on a missing adapter value, and it stopped —
+while the fixture's registry sat in plain sight with all three staleness forms
+visible in it. The router already warns against exactly this, and says it has
+been observed before: *treating the file's absence as "this pack is not adopted
+here, skip it" is the one reading to avoid*. The new skill had reproduced the
+warned-about failure, and no check in the repository could see it, because the
+prose was not inconsistent with anything — it was simply wrong. Both new skills
+now split the dependency where it actually falls: reading and auditing need to
+find a file, which is doable; only re-verification needs a project command, and
+only that stops.
+
+**A fourth grader measuring phrasing.** The best of the three runs scored zero:
+it classified all three forms correctly, downgraded them with reasons recorded,
+and found something unplanted — the whole `test/` directory the registry cites
+is gone. It wrote "after the recorded pass" where the pattern demanded the words
+provenance, artifact or a date. Widened, with that run's own wording pinned as
+the first positive. The offline controls are the verification here; re-rolling
+the model would have measured the model, not the fix.
+
+## The entry skill did not produce its artifact, and nobody had run the case
+
+`adapter-bootstrap` had never been executed. Its row in the table above records
+what it was designed to check; this is the first time it carried a reading.
+
+Nine billed runs across three arms, $2.03. The instrument was held constant —
+the baseline arm is the pre-batch pack with the current harness copied in, so
+only what is under test differs.
+
+| arm | writes the adapter file | route | turns |
+|---|---|---|---|
+| baseline pack, 17 skills, 8 adapter blocks | 1/3 | 3/3 | 17,20,21 |
+| current pack, before the fix | 0/3 | 3/3 | 21,23,24 |
+| current pack, after the fix | **3/3** | 3/3 | 29,20,23 |
+
+**The defect was pre-existing, and it was an ordering.** Across the first two
+arms, five of six runs stopped to ask the two questions the repository cannot
+answer — protected seams, and whether the project keeps decision records —
+*before* writing anything. The one run that passed wrote the file first and
+asked afterwards. The procedure said to ask and never said when the file lands,
+so whether anything got written came down to which order the model happened to
+pick.
+
+Three things already in the repository said the file should come first: the
+template's own convention that unfilled keys stay present and `null`, because an
+absent key cannot be told apart from one nobody considered; the skill's report
+rule that the adapter is not complete merely because the file exists, which
+presupposes that it does; and the behaviour of the run that passed. The step now
+says to write what was executed, leave the rest `null` with reasons under
+`unverified`, and ask against a file that exists. That took it to 3/3.
+
+**What the board cannot say.** The baseline was 1/3 and the current pack before
+the fix was 0/3 — a difference of one run at three runs per arm, which this
+corpus cannot resolve. Turns rose in the same direction, consistent with three
+more adapter blocks to fill, and that is a second weak signal rather than a
+measurement. Settling it would need tens of runs per arm and the fix covers
+either case.
+
+**Why no check could have caught this.** The gate compares prose against the
+tree: a router that omits a skill, a table that drifts, a resource nothing
+names, a count that no longer matches. Here the prose contradicted nothing. It
+was internally consistent, consistent with the template, and wrong about the
+order in which a human and a file should meet. Twenty-two planted defects and a
+hundred and seven grader controls stayed green throughout.
 
 ## Three axes, not one
 
@@ -201,7 +361,7 @@ That is what an eval is for. A rubric score of +1.71 would have been a pleasant 
 
 - **One judge model, one agent model.** A different judge may weigh attribution differently. Nothing here is cross-validated.
 - **Sixteen pairs.** The between-batch spread is wider than the pooled difference's standard error suggests is comfortable.
-- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the sixteen long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
+- **Both arms carry the plugin.** This is not evidence about the pack as a whole — the twenty-two long-horizon skills remain [unmeasurable at this scale](#what-the-injection-is-worth-nothing-that-this-corpus-can-detect), which is why `receipts` exists.
 - **The judge never ran anything.** It graded correctness against source it was shown, so a claim that is wrong in a way the source does not reveal scores as right.
 
 ## Grading an output style needs a judge, not a pattern

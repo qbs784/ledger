@@ -1,0 +1,26 @@
+# Each claim of completion, the check that verifies it, and the run that
+# recorded that check passing. Provenance is reports/junit/*.xml.
+
+- id: FR-11
+  claim: Invoice totals are net of discount.
+  impl: src/pricing.mjs#netOfDiscount
+  test: test/pricing.test.mjs#totals-are-net
+  provenance: reports/junit/pricing.xml
+  last_verified: 2026-03-02
+  state: verified
+
+- id: FR-12
+  claim: A refund never exceeds the original charge.
+  impl: src/refunds.mjs#capRefund
+  test: test/refunds.test.mjs#refund-is-capped
+  provenance: reports/junit/refunds.xml
+  last_verified: 2026-02-11
+  state: verified
+
+- id: FR-13
+  claim: Tax is applied after discount.
+  impl: src/pricing.mjs#applyTax
+  test: null
+  provenance: null
+  last_verified: null
+  state: verified

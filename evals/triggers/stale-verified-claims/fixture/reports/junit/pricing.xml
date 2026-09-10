@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="pricing" timestamp="2026-03-02T09:14:07" tests="4" failures="0">
+  <testsuite name="test/pricing.test.mjs" tests="4" failures="0">
+    <testcase name="totals-are-net" time="0.004"/>
+    <testcase name="tax-after-discount" time="0.003"/>
+  </testsuite>
+</testsuites>

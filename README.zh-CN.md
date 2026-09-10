@@ -87,7 +87,7 @@ claude plugin install ledger@ledger
 
 ## 包里其余的部分
 
-`/ledger:receipts` 是前门。它后面是十六个 skill，针对的是只在长周期里才现形的那些失败：散文不再描述代码、规则无人执行、死掉的代码面没人能证明它已经死了。输入 `/ledger:using-ledger` 看地图，或者直接点用某一个。
+`/ledger:receipts` 是前门。它后面是二十二个 skill，针对的是只在长周期里才现形的那些失败：散文不再描述代码、规则无人执行、死掉的代码面没人能证明它已经死了。输入 `/ledger:using-ledger` 看地图，或者直接点用某一个。
 
 | Skill | 什么时候用它 |
 |---|---|
@@ -96,6 +96,10 @@ claude plugin install ledger@ledger
 | `adapting-to-a-project` | 在一个新仓库里做初始配置 |
 | `what-counts-as-evidence` | 正要声称某件事能用、通过了、或者做完了 |
 | `refusing-busywork` | 挑选要跑哪些检查，或正要重复一个已经通过的 |
+| `qualifying-a-request` | 新需求到手，还没有任何设计的时候 |
+| `specifying-acceptance` | 写验收判据，或者声明一段行为的语义 |
+| `planning-the-work` | 把方案变成工作单元、定顺序和每个在哪跑 |
+| `running-a-bounded-loop` | 把一个单元跑到完成，或定义它的退出 gate |
 | `scoping-a-change` | 弄清一次改动到底碰了什么 |
 | `proving-the-regression` | 加一道守卫；声称一个修复有效 |
 | `designing-concurrent-tests` | 测试碰到端口、文件、环境变量、时钟或清理 |
@@ -108,12 +112,14 @@ claude plugin install ledger@ledger
 | `reviewing-as-cis-complement` | 评审一次改动，或回应对自己改动的评审 |
 | `pushing-safely` | push、force-push，或确认某个东西是否真的落地 |
 | `recording-ui-evidence` | 录一段 UI 演示作为视觉证据 |
+| `validating-real-scenarios` | 在真实部署上做首次验收，或响应「跑偏了」的反馈 |
+| `metabolizing-knowledge` | 问一件早先交付的东西现在还成不成立 |
 
-![每个 skill 在一次迭代中的位置：一个入口路由、从初始配置到记录整理的五个编号阶段，以及两个在每个阶段都适用的 skill。](assets/loop.svg)
+![每个 skill 在一次迭代中的位置：一个入口路由、从需求立项到记录整理的六个编号阶段，以及两个在每个阶段都适用的 skill。](assets/loop.svg)
 
 ## 七条规则
 
-这七条压在全部十六个 skill 底下。更长的论证在 [docs/method.md](docs/method.md)。
+这七条压在全部二十二个 skill 底下。更长的论证在 [docs/method.md](docs/method.md)。
 
 1. **最窄的充分证据。** 跑那个真的会失败的检查。永远不要条件反射地跑全量。
 2. **绝不伪造绿灯。** 不许压制空结果、不许降低阈值、不许缩小范围来藏掉一个文件。

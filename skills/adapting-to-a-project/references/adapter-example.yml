@@ -82,6 +82,24 @@ records:
 # The list that stops a confident wrong deletion. This is the one section that
 # usually has to come from a person — nothing in the repository announces that a
 # design is deliberate.
+execution:
+  # verified: ran cost_report over 3 weeks of this repo's own session logs;
+  # break-even landed between 2 and 3 turns, so the conservative edge is used.
+  worker_break_even_turns: 3
+  context_ceiling: 250000
+  cost_report: scripts/session-cost.mjs --since 21d
+
+scenarios:
+  # verified: brought the compose stack up and drove three stories end to end
+  stand_up: make stack-up
+  suite: make scenarios
+  permitted_entries: [http-api, cli]
+
+traceability:
+  registry: docs/traceability.yml
+  provenance: reports/junit/*.xml
+  archive: docs/archive/
+
 protected_seams:
   - The two payment adapters look like duplication and are not; the legacy one still serves customers on the old contract and cannot be removed until they migrate.
   - The retry wrapper around the mailer looks redundant next to the queue's own retries; it exists because the provider returns 200 on a rejected recipient.

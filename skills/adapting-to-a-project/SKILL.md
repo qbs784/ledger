@@ -29,9 +29,22 @@ Record only what you observed. Where you cannot execute something — a CI-only 
 
 5. **Classify the source tree.** Write globs for production and non-production paths. Get this from the build configuration and the published entry points, not from directory names. This is the input to proving code is dead, and a mistake here produces confident wrong deletions.
 
-6. **Ask only for what the repository cannot tell you.** Two things usually need a human: which designs are intentional but look removable (`protected_seams`), and whether the project keeps durable decision records. Ask these directly and briefly; do not interview around them.
+6. **Write the file before you ask anything.** Every value you executed goes in;
+   everything else goes in as `null` with its reason under `unverified`. That is
+   the shape the template documents — an absent key cannot be told apart from a
+   key nobody considered — so a file full of nulls is a correct intermediate
+   state and an unwritten file is not. Waiting until the last question is
+   answered means a session that gets interrupted, or a reader who does not
+   answer, ends with nothing at all.
 
-7. **Make it discoverable.** A file nothing points at is a file nobody loads. Offer to add one line to the project's always-loaded instruction file (`CLAUDE.md`, or whatever this harness loads by default) naming `.ledger.yml` and saying that the pack's skills read it. Ask before editing that file.
+7. **Then ask only for what the repository cannot tell you**, against the file
+   that now exists. Two things usually need a human: which designs are
+   intentional but look removable (`protected_seams`), and whether the project
+   keeps durable decision records. Ask them directly and briefly; do not
+   interview around them. Their answers are an edit to a written file, not a
+   precondition for writing one.
+
+8. **Make it discoverable.** A file nothing points at is a file nobody loads. Offer to add one line to the project's always-loaded instruction file (`CLAUDE.md`, or whatever this harness loads by default) naming `.ledger.yml` and saying that the pack's skills read it. Ask before editing that file.
 
 ## The schema
 

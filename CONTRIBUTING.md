@@ -73,7 +73,7 @@ Release notes go in the GitHub release, not in a changelog file. A changelog her
 `assets/` holds two SVGs used in the READMEs, plus the social-preview source and its rendered PNG. Every vector is hand-written — no design tool, no binary source to lose.
 
 - `logo.svg` and `loop.svg` are theme-aware: the palette is redefined under `prefers-color-scheme: dark`, and the base colours are mid-tones that clear a 3:1 contrast ratio against **both** a white and a dark background, so the artwork still reads if a renderer strips the media query rather than collapsing into the page. Every shape in `loop.svg` is stroke-only for the same reason — a filled card that stays light on a dark page is the failure this avoids.
-- `loop.svg` names all sixteen skills, and the drift gate fails if it names one that is not shipped or omits one that is.
+- `loop.svg` names all twenty-two stage skills — every shipped skill but `receipts`, which is an output style holding for a whole iteration rather than a step inside one — and the drift gate fails if it names one that is not shipped or omits one that is.
 - `social-preview.png` is what a platform shows when the repository link is shared. It is a raster on someone else's surface, so its colours are baked rather than theme-aware. Regenerate it from its source after any edit:
 
 ```sh

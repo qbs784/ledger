@@ -1,11 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 404" width="800" height="404" role="img"
-     aria-label="Where each of the sixteen skills sits in one iteration: an entry router, five numbered stages from set-up through curation, and two skills that apply at every stage.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 510" width="800" height="510" role="img"
+     aria-label="Where each of the twenty-two skills sits in one iteration: an entry router, six numbered stages from qualifying a request through curation, and two skills that apply at every stage.">
   <title>Where each skill sits in one iteration</title>
   <!--
     Deliberately NOT organised by the five pillars: a pillar spans several
     stages, so a five-cell colour mapping would invent a correspondence the
     README does not claim. What this shows is placement in the loop, which is
     otherwise only reconstructible by reading two separate tables.
+
+    receipts is the only shipped skill absent here, and deliberately: it is an
+    output style that holds for the whole iteration rather than a step inside
+    one, so placing it in a stage would be the false claim.
 
     Sized at 800 wide so a README renders it at roughly 1:1 instead of scaling
     the labels down, and the base colours are mid-tones legible on both a white
@@ -43,51 +47,67 @@
   <g>
     <rect class="box" x="20" y="78" width="240" height="146" rx="6" />
     <circle class="acc" cx="42" cy="102" r="9" /><text class="num" x="42" y="106" text-anchor="middle">1</text>
-    <text class="head" x="58" y="106">Set up &amp; scope</text>
+    <text class="head" x="58" y="106">Qualify &amp; specify</text>
     <line class="rule" x1="34" y1="120" x2="246" y2="120" />
-    <text class="sk" x="34" y="140">adapting-to-a-project</text>
-    <text class="sk" x="34" y="158">scoping-a-change</text>
+    <text class="sk" x="34" y="140">qualifying-a-request</text>
+    <text class="sk" x="34" y="158">specifying-acceptance</text>
 
     <rect class="box" x="280" y="78" width="240" height="146" rx="6" />
     <circle class="acc" cx="302" cy="102" r="9" /><text class="num" x="302" y="106" text-anchor="middle">2</text>
-    <text class="head" x="318" y="106">Decide &amp; design</text>
+    <text class="head" x="318" y="106">Plan &amp; scope</text>
     <line class="rule" x1="294" y1="120" x2="506" y2="120" />
-    <text class="sk" x="294" y="140">proving-code-is-dead</text>
-    <text class="sk" x="294" y="158">designing-concurrent-tests</text>
-    <text class="sk" x="294" y="176">proving-the-regression</text>
+    <text class="sk" x="294" y="140">planning-the-work</text>
+    <text class="sk" x="294" y="158">adapting-to-a-project</text>
+    <text class="sk" x="294" y="176">scoping-a-change</text>
 
     <rect class="box" x="540" y="78" width="240" height="146" rx="6" />
     <circle class="acc" cx="562" cy="102" r="9" /><text class="num" x="562" y="106" text-anchor="middle">3</text>
-    <text class="head" x="578" y="106">Write &amp; document</text>
+    <text class="head" x="578" y="106">Decide &amp; design</text>
     <line class="rule" x1="554" y1="120" x2="766" y2="120" />
-    <text class="sk" x="554" y="140">writing-complete-propositions</text>
-    <text class="sk" x="554" y="158">fact-checking-by-execution</text>
-    <text class="sk" x="554" y="176">trimming-session-vantage</text>
+    <text class="sk" x="554" y="140">proving-the-regression</text>
+    <text class="sk" x="554" y="158">designing-concurrent-tests</text>
+    <text class="sk" x="554" y="176">proving-code-is-dead</text>
   </g>
 
   <!-- row 2 -->
   <g>
     <rect class="box" x="20" y="240" width="240" height="146" rx="6" />
     <circle class="acc" cx="42" cy="264" r="9" /><text class="num" x="42" y="268" text-anchor="middle">4</text>
-    <text class="head" x="58" y="268">Review &amp; land</text>
+    <text class="head" x="58" y="268">Build &amp; document</text>
     <line class="rule" x1="34" y1="282" x2="246" y2="282" />
-    <text class="sk" x="34" y="302">reviewing-as-cis-complement</text>
-    <text class="sk" x="34" y="320">recording-ui-evidence</text>
-    <text class="sk" x="34" y="338">pushing-safely</text>
+    <text class="sk" x="34" y="302">running-a-bounded-loop</text>
+    <text class="sk" x="34" y="320">writing-complete-propositions</text>
+    <text class="sk" x="34" y="338">fact-checking-by-execution</text>
+    <text class="sk" x="34" y="356">trimming-session-vantage</text>
 
     <rect class="box" x="280" y="240" width="240" height="146" rx="6" />
     <circle class="acc" cx="302" cy="264" r="9" /><text class="num" x="302" y="268" text-anchor="middle">5</text>
-    <text class="head" x="318" y="268">Curate &amp; diagnose</text>
+    <text class="head" x="318" y="268">Review &amp; land</text>
     <line class="rule" x1="294" y1="282" x2="506" y2="282" />
-    <text class="sk" x="294" y="302">curating-decision-records</text>
-    <text class="sk" x="294" y="320">diagnosing-flakes</text>
+    <text class="sk" x="294" y="302">reviewing-as-cis-complement</text>
+    <text class="sk" x="294" y="320">recording-ui-evidence</text>
+    <text class="sk" x="294" y="338">pushing-safely</text>
 
-    <rect class="cross" x="540" y="240" width="240" height="146" rx="6" stroke-width="1.5" />
-    <text class="head" x="554" y="268">Applies at every stage</text>
+    <rect class="box" x="540" y="240" width="240" height="146" rx="6" />
+    <circle class="acc" cx="562" cy="264" r="9" /><text class="num" x="562" y="268" text-anchor="middle">6</text>
+    <text class="head" x="578" y="268">Validate &amp; curate</text>
     <line class="rule" x1="554" y1="282" x2="766" y2="282" />
-    <text class="sk" x="554" y="302">what-counts-as-evidence</text>
-    <text class="sk" x="554" y="320">refusing-busywork</text>
-    <text class="cap" x="554" y="350">what a signal proves, and</text>
-    <text class="cap" x="554" y="366">what not to run</text>
+    <text class="sk" x="554" y="302">validating-real-scenarios</text>
+    <text class="sk" x="554" y="320">diagnosing-flakes</text>
+    <text class="sk" x="554" y="338">curating-decision-records</text>
+    <text class="sk" x="554" y="356">metabolizing-knowledge</text>
+  </g>
+
+  <!-- applies throughout -->
+  <g>
+    <rect class="cross" x="20" y="402" width="760" height="92" rx="6" stroke-width="1.5" />
+    <text class="head" x="34" y="430">Applies at every stage</text>
+    <line class="rule" x1="34" y1="444" x2="766" y2="444" />
+    <text class="sk" x="34" y="464">what-counts-as-evidence</text>
+    <text class="cap" x="34" y="482">what a signal proves</text>
+    <text class="sk" x="294" y="464">refusing-busywork</text>
+    <text class="cap" x="294" y="482">what not to run</text>
+    <text class="cap" x="554" y="464">receipts holds for the whole</text>
+    <text class="cap" x="554" y="482">iteration, so it sits in no stage</text>
   </g>
 </svg>

@@ -55,6 +55,10 @@ change lands with nothing behind it.
 | starting in a new repository, or a skill reports a missing adapter value | `adapting-to-a-project` |
 | about to state that something works, passes, is covered, or is done | `what-counts-as-evidence` |
 | choosing which checks to run, or about to repeat one that passed | `refusing-busywork` |
+| handed a request for new work, before any design or plan exists for it | `qualifying-a-request` |
+| writing or reviewing acceptance criteria, exit conditions, or what a behavior means | `specifying-acceptance` |
+| turning an approved approach into units, their order, and where each runs | `planning-the-work` |
+| carrying one unit to done, or deciding what its exit gate must contain | `running-a-bounded-loop` |
 | working out what a change actually touches | `scoping-a-change` |
 | adding a guard, rule, or validator; asserting a fix works | `proving-the-regression` |
 | writing or reviewing a test that touches ports, files, env, clocks, or teardown | `designing-concurrent-tests` |
@@ -67,6 +71,8 @@ change lands with nothing behind it.
 | reviewing a change, or answering review on your own | `reviewing-as-cis-complement` |
 | pushing, force-pushing, or checking whether something landed | `pushing-safely` |
 | recording a UI demo as visual evidence | `recording-ui-evidence` |
+| accepting something against a real deployment, or answering a report that it drifted | `validating-real-scenarios` |
+| asking whether something delivered earlier still holds | `metabolizing-knowledge` |
 
 Load more than one when more than one applies. They are written to compose, and each names the boundary where it hands off.
 
@@ -75,10 +81,10 @@ Load more than one when more than one applies. They are written to compose, and 
 If you want the shape rather than the index:
 
 1. **Documentation is the substrate, not the byproduct.** For a human team docs are a courtesy; for an agent they are the working memory. Every fact gets one home, and a rule that becomes mechanical is promoted into a check and *deleted* from the prose. — `writing-complete-propositions`, `fact-checking-by-execution`
-2. **Agent-native by construction.** Written for the case where a model is the author, which changes what the failures are: prose carries the authoring session's viewpoint, speculative surface accretes fast and evenly, and the worker will report success. — `trimming-session-vantage`, `what-counts-as-evidence`, `proving-code-is-dead`
-3. **Loop engineering: each iteration cheap and true.** A long-horizon loop dies of wasted turns. Verified bases, narrowest checks, no ceremony. — `scoping-a-change`, `refusing-busywork`
+2. **Agent-native by construction.** Written for the case where a model is the author, which changes what the failures are: prose carries the authoring session's viewpoint, speculative surface accretes fast and evenly, and the worker will report success — including to itself, by writing down what a thing means and treating that as having built it, and by reading a green suite as a working product. — `trimming-session-vantage`, `what-counts-as-evidence`, `specifying-acceptance`, `validating-real-scenarios`, `proving-code-is-dead`
+3. **Loop engineering: each iteration cheap and true.** A long-horizon loop dies of wasted turns. What a request earns before it earns a change, verified bases, an arrangement that says where each unit runs, narrowest checks, and a gate that decides when one is finished. — `qualifying-a-request`, `scoping-a-change`, `planning-the-work`, `running-a-bounded-loop`, `refusing-busywork`
 4. **Long-horizon automation needs a durable record.** A reader 500 turns later must resolve every reference and re-derive every decision. — `curating-decision-records`, `recording-ui-evidence`
-5. **Rot resistance as a build requirement, not a cleanup task.** Pin the absence of dead values so a stale reference fails a check instead of aging quietly. Prove code is dead before deleting it. — `proving-the-regression`, `designing-concurrent-tests`, `diagnosing-flakes`, `reviewing-as-cis-complement`, `pushing-safely`
+5. **Rot resistance as a build requirement, not a cleanup task.** Pin the absence of dead values so a stale reference fails a check instead of aging quietly. Prove code is dead before deleting it. Every other discipline here produces knowledge; exactly one reclaims it, and without that one the record only grows. — `proving-the-regression`, `designing-concurrent-tests`, `diagnosing-flakes`, `reviewing-as-cis-complement`, `pushing-safely`, `metabolizing-knowledge`
 
 ## The adapter is not an adoption gate
 

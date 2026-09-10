@@ -87,6 +87,58 @@ records:
   # project's own checks reject.
   required_sections: []
 
+# Figures derived from THIS project's own agent session logs. Copying another
+# project's numbers produces a budget for someone else's repository, which is
+# worse than having none: it reads as measured. Read by: planning-the-work.
+execution:
+  # The number of turns at which handing a unit to a fresh worker costs less
+  # than running it on the main line. Below it, keep the unit inline; at or
+  # above it, delegate. Derive it — do not adopt one.
+  worker_break_even_turns: null
+
+  # The context size past which a unit is no longer safe to merge with another.
+  # A run that crosses it gets interrupted and finished by a second worker,
+  # which costs more than merging saved.
+  context_ceiling: null
+
+  # The command that reads this project's session logs and reports the two
+  # figures above. Null until someone has worked it out here.
+  cost_report: null
+
+# How this project stands a production-shaped instance up, and what it runs
+# against it. Read by: validating-real-scenarios.
+scenarios:
+  # Brings up an instance shaped like production — the real interfaces, the real
+  # wiring, not a harness. Null until someone has one here.
+  stand_up: null
+
+  # Runs the scenario suite against that instance. A scenario suite is not the
+  # test suite: it drives whole user-visible stories through the shipped entry.
+  suite: null
+
+  # The interfaces a scenario is allowed to drive. Anything reached another way
+  # — a direct database write, an internal function call — proves something
+  # about the code and nothing about the product.
+  permitted_entries: []
+
+# The registry linking each claim of completion to the test that verifies it and
+# to the machine-produced artifact recording that test passing. Read by:
+# metabolizing-knowledge.
+traceability:
+  # Where the registry lives.
+  registry: null
+
+  # The artifact a run produces by itself — a report a test runner writes, not a
+  # checklist a person maintains. It is the only admissible evidence that
+  # something marked verified ever passed; without it, "done" rests on the word
+  # "done" appearing in a file.
+  provenance: null
+
+  # Where retired entries move to. A path, never a deletion: an entry that is
+  # wrong today is the record of why it was written, and restoring it has to
+  # stay possible.
+  archive: null
+
 # Intentional designs a removal proposal must out-argue rather than discover.
 # Each entry names the design and why it looks removable but is not. This is the
 # list that stops a confident wrong deletion, and it is the one thing here that

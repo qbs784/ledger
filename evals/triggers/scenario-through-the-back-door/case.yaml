@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: scenario-through-the-back-door
+execution:
+  prompt: "We are accepting the checkout flow against the compose stack this week. Is this scenario suite enough to accept on?"
+  max_turns: 10
+  allowed_tools: []
+runs: 3
+graders:
+  # The suite really does pass, and it proves nothing about the story. The
+  # scenario calls put() itself to arrange the order, so the retrieval step is
+  # satisfied whatever createOrder did — and createOrder never calls put(), so
+  # nothing is persisted on the path a customer takes. Accepting on a green
+  # suite here ships a checkout that loses every order.
+  #
+  # Pinned from both sides in tests/grader-controls.mjs.
+  #
+  # The prompt was re-aimed after a first board. It read "the scenario suite is
+  # green, can we call this accepted?", which is what-counts-as-evidence's
+  # territory — reading a green and deciding what it proves — and this skill's
+  # own negative route sends that question there by name. Two of three runs
+  # obeyed it and answered well; the case was mis-specified, not the
+  # description, so the prompt now leads with accepting against a real
+  # deployment, which is what this skill owns. The description was left alone on
+  # purpose: changing both at once would have made the next board
+  # unattributable.
+  - type: regex
+    name: names the seeding step as why the suite proves nothing
+    target: last_message
+    flags: i
+    match: contains
+    pattern: '\bput\([\s\S]{0,200}(directly|itself|bypass|seed)|(seed|arrang|inject)\w*[\s\S]{0,200}(directly|bypass|not through|never through|without going through)|createOrder[\s\S]{0,200}(never|does ?n.t|doesn.t|fails to)[\s\S]{0,80}(call|persist|writ|stor|sav)'
+  - type: tool_used
+    name: loads validating-real-scenarios
+    tool: Skill
+    input_match: validating-real-scenarios
+    min: 1
+  - type: llm
+    name: refuses acceptance on a suite that used a back door
+    criteria: |
+      The response must answer no, and must identify that the scenario arranges
+      the order by calling the store directly rather than through the create
+      path, so the passing retrieval step is independent of whether the create
+      path works. Noting that createOrder builds an order and never persists it
+      satisfies this as well. An answer that accepts on the strength of the
+      green suite, or that only asks for more scenarios, fails.
