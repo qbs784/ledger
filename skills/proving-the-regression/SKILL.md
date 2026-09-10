@@ -20,6 +20,13 @@ Before trusting a guard, make the case it exists to reject, watch it fail, then 
 - A strong promise needs both a focused valid fixture **and** an invalid one that proves the check can fail.
 - Where a check is meant to reject a candidate before publication, verify it rejects at that point, not merely somewhere downstream.
 
+[references/false-guardrail-forms.md](references/false-guardrail-forms.md) is the
+recognition catalog: twelve shapes a guard takes when it cannot reject, the
+question that exposes each, the six checks to run over an assertion you just
+wrote, and where mutation survivors actually cluster. Reach for it when you
+cannot see what a control for this guard would even look like — a guard whose
+negative control is hard to construct is usually one of the twelve.
+
 ## Verify the world, not the self-report
 
 Assertions must fail on the intended regression and verify **external** state — files, events, logs, exit codes, disposal, database rows — rather than restating the implementation or trusting a component's own account of what it did.
